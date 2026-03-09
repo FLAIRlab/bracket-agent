@@ -1,0 +1,21 @@
+Bracket dimensions:
+  flange_width:  70 mm
+  flange_height: 60 mm
+  web_height:    100 mm
+  thickness:     6 mm
+  fillet_radius: 4 mm
+
+Material: structural steel
+  E:    200 GPa
+  nu:   0.3
+  rho:  7850 kg/m³
+  Sy:   250 MPa
+
+Load:
+  type:      point_force
+  location:  tip of flange
+  magnitude: 2000 N
+  direction: -Z
+
+Boundary conditions:
+  fixed face: web back face (all DOF constrained)

@@ -1,0 +1,35 @@
+** CalculiX base template for bracket FEM analysis
+** Material and step cards — mesh nodes/elements injected by tools/calculix.py
+**
+** MATERIAL
+** --------
+** *MATERIAL, NAME=STEEL
+** *ELASTIC
+** 200e9, 0.3
+** *DENSITY
+** 7850.0
+**
+** STEP
+** ----
+** *STEP
+** *STATIC
+**
+** BOUNDARY CONDITIONS (injected)
+** *BOUNDARY
+** <NSET_FIXED>, 1, 6
+**
+** LOADS (injected)
+** *CLOAD
+** <NODE_TIP>, <DOF>, <MAGNITUDE>
+**
+** OUTPUT
+** ------
+** *NODE PRINT, NSET=NALL
+** U
+** *EL PRINT, ELSET=EALL
+** S, MISES
+** *NODE FILE
+** U
+** *EL FILE
+** S
+** *END STEP

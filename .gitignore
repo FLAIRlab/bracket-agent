@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# FEM solver artefacts
+runs/iter_*/
+*.frd
+*.dat
+*.sta
+*.cvg
+*.12d
+*.inp
+spooles.out
+
+# But keep the placeholder
+!runs/.gitkeep
+
+# macOS
+.DS_Store
+
+# CalculiX help/version side effects
+--help.*
+--version.*
+
+# IDE
+.vscode/
+.idea/
