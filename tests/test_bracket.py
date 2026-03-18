@@ -356,7 +356,11 @@ def test_create_geometry_output_files(tmp_path):
     params_json = tmp_path / "params.json"
     assert params_json.exists()
     loaded = json.loads(params_json.read_text())
-    assert loaded == _STD_PARAMS
+    # params.json includes metadata keys (_bracket_type, _schema_version) in addition
+    # to the geometry params — check that all geometry params are present and correct
+    for key, val in _STD_PARAMS.items():
+        assert key in loaded, f"missing key {key!r}"
+        assert loaded[key] == pytest.approx(val), f"mismatch for {key!r}"
 
 
 @pytest.mark.requires_freecadcmd

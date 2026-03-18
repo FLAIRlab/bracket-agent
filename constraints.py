@@ -17,23 +17,20 @@ CONSTRAINTS = {
 
 
 def _compute_mass(params: dict, rho: float) -> float:
-    """Compute bracket mass analytically (web + flange, no double-count at corner)."""
+    """Compute L-bracket mass analytically (web + flange, no double-count at corner)."""
     fw = params["flange_width"]
     fh = params["flange_height"]
     wh = params["web_height"]
     t  = params["thickness"]
-
-    # Web volume: t × fh × wh
-    v_web = t * fh * wh
-    # Flange volume: fw × fh × t  (sits at top of web, no corner overlap since web
-    # occupies x=[0,t] and flange occupies x=[0,fw], z=[wh-t, wh] — overlap is t×fh×t)
-    v_flange = fw * fh * t
-    v_overlap = t * fh * t  # corner block counted twice
-    v_total = v_web + v_flange - v_overlap
+    v_web     = t * fh * wh
+    v_flange  = fw * fh * t
+    v_overlap = t * fh * t
+    v_total   = v_web + v_flange - v_overlap
     return v_total * rho
 
 
-def evaluate_constraints(metrics: dict, constraints: dict) -> dict:
+def evaluate_constraints(metrics: dict, constraints: dict,
+                         bracket_type=None) -> dict:
     """
     Evaluate constraint satisfaction.
 
@@ -44,6 +41,9 @@ def evaluate_constraints(metrics: dict, constraints: dict) -> dict:
         rho (kg/m³), Sy_pa (yield stress in Pa).
     constraints : dict
         Constraint limits (see CONSTRAINTS above).
+    bracket_type : BracketType | None
+        If provided, uses bracket_type.mass_fn for mass calculation.
+        Defaults to L-bracket mass formula (_compute_mass) when None.
 
     Returns
     -------
@@ -87,7 +87,11 @@ def evaluate_constraints(metrics: dict, constraints: dict) -> dict:
         )
 
     # --- Mass check ---
-    mass_kg = _compute_mass(params, rho)
+    if bracket_type is not None:
+        mass_kg = bracket_type.mass_fn(params, rho)
+    else:
+        mass_kg = _compute_mass(params, rho)
+
     limit_mass = constraints.get("max_mass_kg", CONSTRAINTS["max_mass_kg"])
     if limit_mass is not None and mass_kg > limit_mass:
         violations.append(

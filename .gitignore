@@ -32,3 +32,6 @@ spooles.out
 # IDE
 .vscode/
 .idea/
+
+# Credentials — never commit the real .env
+credentials/.env

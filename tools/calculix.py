@@ -5,6 +5,9 @@ Provides write_inp() to assemble a full analysis input file from mesh,
 loads, boundary conditions, and material cards, and run_simulation() to
 shell out to the ccx CLI and return paths to the .frd and .dat results.
 Raises SimulationError if ccx exits non-zero.
+
+Multi-bracket-type support: pass a BracketType to write_inp() to select
+the fixed-face and tip-node detection functions. Defaults to L-bracket.
 """
 
 import logging
@@ -34,7 +37,6 @@ def _parse_mesh_inp(mesh_path: Path) -> tuple[dict, list, list]:
 
     in_node = False
     in_element = False
-    current_elem_header = ""
 
     with mesh_path.open(encoding="utf-8") as fh:
         for line in fh:
@@ -49,7 +51,6 @@ def _parse_mesh_inp(mesh_path: Path) -> tuple[dict, list, list]:
             if upper.startswith("*ELEMENT"):
                 in_element = True
                 in_node = False
-                current_elem_header = stripped
                 element_header_lines.append(stripped)
                 continue
 
@@ -82,22 +83,29 @@ def write_inp(
     bcs: dict,
     material: dict,
     output_dir: Path,
+    bracket_type=None,
 ) -> Path:
     """
     Assemble a full CalculiX analysis.inp from mesh + cards.
 
     Parameters
     ----------
-    mesh_path  : Path — mesh.inp from Gmsh
-    loads      : dict — {type, magnitude_n, direction} (e.g. point_force, -Z)
-    bcs        : dict — {type: "fixed_face"} (web back face)
-    material   : dict — {E_pa, nu, rho, Sy_pa}
-    output_dir : Path
+    mesh_path    : Path — mesh.inp from Gmsh
+    loads        : dict — {type, magnitude_n, direction}
+    bcs          : dict — {type: "fixed_face"}; bcs["params"] holds geo params
+    material     : dict — {E_pa, nu, rho, Sy_pa}
+    output_dir   : Path
+    bracket_type : BracketType | None — selects fixed_nodes_fn / tip_node_fn.
+                   Defaults to L-bracket when None.
 
     Returns
     -------
     Path to analysis.inp
     """
+    if bracket_type is None:
+        from bracket_types import get_type
+        bracket_type = get_type("l_bracket")
+
     mesh_path  = Path(mesh_path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -108,42 +116,24 @@ def write_inp(
     if not nodes:
         raise SimulationError(f"No nodes parsed from {mesh_path}")
 
-    # 2. Identify FIXED node set: back web face at X ≈ 0
-    tol = 1e-6
-    fixed_nodes = [nid for nid, (x, y, z) in nodes.items() if abs(x) < tol]
-    if not fixed_nodes:
-        # Fallback: use x < 1% of x-range
-        all_x = [xyz[0] for xyz in nodes.values()]
-        x_range = max(all_x) - min(all_x)
-        tol_fb = x_range * 0.01
-        fixed_nodes = [nid for nid, (x, y, z) in nodes.items() if x < tol_fb]
-        logger.warning(
-            "No nodes found at x=0 (tol=1e-6); using 1%% x-range fallback (tol=%.3e). "
-            "Check geometry alignment.",
-            tol_fb,
-        )
-    logger.debug("Fixed nodes (back face): %d", len(fixed_nodes))
-
-    # 3. Identify TIP node: closest to (flange_width, flange_height/2, web_height - thickness)
-    # We need geometry params — infer from bounding box if not in bcs
+    # 2. Get geometry params from bcs dict
     params = bcs.get("params", {})
-    all_x = [xyz[0] for xyz in nodes.values()]
-    all_y = [xyz[1] for xyz in nodes.values()]
-    all_z = [xyz[2] for xyz in nodes.values()]
 
-    fw = params.get("flange_width",  max(all_x))
-    fh = params.get("flange_height", (max(all_y) + min(all_y)) / 2.0)
-    wh = params.get("web_height",    max(all_z))
-    t  = params.get("thickness",     (max(all_z) - min(all_z)) * 0.05)
+    # 3. Identify FIXED node set via bracket_type
+    fixed_nodes = bracket_type.fixed_nodes_fn(nodes, params)
+    if not fixed_nodes:
+        raise SimulationError(
+            f"No fixed nodes found for {bracket_type.name} "
+            f"(via {bracket_type.fixed_nodes_fn.__name__}). "
+            "Check that the mesh covers the geometry's fixed face."
+        )
+    logger.debug("Fixed nodes (%s): %d", bracket_type.name, len(fixed_nodes))
 
-    tip_target = (fw, fh / 2.0, wh - t / 2.0)
-    tip_node = min(
-        nodes.keys(),
-        key=lambda nid: math.dist(nodes[nid], tip_target),
-    )
+    # 4. Identify TIP node via bracket_type
+    tip_node = bracket_type.tip_node_fn(nodes, params)
     logger.debug("Tip node %d at %s", tip_node, nodes[tip_node])
 
-    # 4. Determine load DOF and sign
+    # 5. Determine load DOF and sign
     direction = loads.get("direction", "-Z").upper().strip()
     magnitude = float(loads.get("magnitude_n", 0.0))
     dof_map = {"X": 1, "Y": 2, "Z": 3, "-X": 1, "-Y": 2, "-Z": 3}
@@ -155,14 +145,13 @@ def write_inp(
     nu    = material["nu"]
     rho   = material["rho"]
 
-    # 5. Read raw mesh.inp for node/element blocks
+    # 6. Read raw mesh.inp for node/element blocks
     raw_mesh = mesh_path.read_text(encoding="utf-8")
 
-    # 6. Assemble analysis.inp
+    # 7. Assemble analysis.inp
     out_path = output_dir / "analysis.inp"
     lines = []
 
-    # --- Paste mesh nodes and elements verbatim ---
     lines.append("** CalculiX analysis generated by bracket-agent")
     lines.append("**")
 
@@ -172,9 +161,7 @@ def write_inp(
         x, y, z = nodes[nid]
         lines.append(f"{nid}, {x:.10e}, {y:.10e}, {z:.10e}")
 
-    # Re-emit *ELEMENT blocks — only 3D solid elements (C3D*) go into EALL;
-    # surface/edge element groups written by Gmsh are silently dropped so that
-    # *SOLID SECTION, ELSET=EALL is only applied to volume elements.
+    # Re-emit *ELEMENT blocks — only 3D solid elements (C3D*) go into EALL
     in_elem = False
     for raw_line in raw_mesh.splitlines():
         stripped = raw_line.strip()
@@ -184,13 +171,11 @@ def write_inp(
             type_part = next((p for p in parts if p.upper().startswith("TYPE")), "")
             elem_type = type_part.split("=")[-1].strip().upper()
             if elem_type.startswith("C3D"):
-                # 3D solid element — keep and force ELSET=EALL
                 parts = [p for p in parts if not p.upper().startswith("ELSET")]
                 parts.append("ELSET=EALL")
                 lines.append(", ".join(parts))
                 in_elem = True
             else:
-                # Surface/edge element — skip
                 in_elem = False
             continue
         if stripped.startswith("*"):
@@ -205,7 +190,6 @@ def write_inp(
     lines.append(f"{nids_sorted[0]}, {nids_sorted[-1]}, 1")
 
     lines.append("*NSET, NSET=FIXED")
-    # Write in chunks of 16
     for i in range(0, len(fixed_nodes), 16):
         chunk = fixed_nodes[i:i + 16]
         lines.append(", ".join(str(n) for n in chunk))
@@ -214,7 +198,7 @@ def write_inp(
     lines.append(str(tip_node))
 
     # --- Material ---
-    lines.append(f"*MATERIAL, NAME=STEEL")
+    lines.append("*MATERIAL, NAME=STEEL")
     lines.append("*ELASTIC")
     lines.append(f"{E_pa:.6e}, {nu:.4f}")
     lines.append("*DENSITY")
@@ -225,15 +209,12 @@ def write_inp(
     lines.append("*STEP")
     lines.append("*STATIC")
 
-    # Boundary conditions: FIXED face, all 6 DOF
     lines.append("*BOUNDARY")
     lines.append("FIXED, 1, 6")
 
-    # Load
     lines.append("*CLOAD")
     lines.append(f"TIP, {load_dof}, {load_value:.6e}")
 
-    # Output requests
     lines.append("*NODE PRINT, NSET=NALL")
     lines.append("U")
     lines.append("*EL PRINT, ELSET=EALL")
@@ -254,21 +235,11 @@ def run_simulation(inp_path: Path) -> tuple[Path, Path]:
     """
     Run CalculiX on inp_path and return (frd_path, dat_path).
 
-    Parameters
-    ----------
-    inp_path : Path — analysis.inp
-
-    Returns
-    -------
-    (frd_path, dat_path)
-
-    Raises
-    ------
-    SimulationError on ccx failure or missing output files.
+    Raises SimulationError on ccx failure or missing output files.
     """
     inp_path   = Path(inp_path)
     output_dir = inp_path.parent
-    stem       = inp_path.stem  # e.g. "analysis"
+    stem       = inp_path.stem
 
     logger.info("Running ccx: %s", inp_path)
     try:

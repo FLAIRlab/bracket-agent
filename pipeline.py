@@ -13,6 +13,7 @@ import logging
 import sys
 from pathlib import Path
 
+from bracket_types import KNOWN_TYPE_NAMES, get_type
 from constraints import CONSTRAINTS, evaluate_constraints
 from optimizer import propose_params
 from tools.geometry import GeometryError, create_geometry
@@ -29,6 +30,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Kept for backward compatibility — use bracket_type.param_keys for multi-type logic.
 GEOMETRY_KEYS = ("flange_width", "flange_height", "web_height", "thickness", "fillet_radius")
 
 _UNIT_TO_SI = {
@@ -61,13 +63,23 @@ _KEY_ALIASES = {
     "web_height":    "web_height",
     "thickness":     "thickness",
     "fillet_radius": "fillet_radius",
+    "channel_width": "channel_width",
+    "wall_height":   "wall_height",
+    "channel_depth": "channel_depth",
     "type":          "type",
     "location":      "location",
     "magnitude":     "magnitude_n",
     "direction":     "direction",
     "fixed_face":    "fixed_face",
     "max_mass_kg":   "max_mass_kg",
+    "bracket_type":  "bracket_type_name",
 }
+
+# All geometry keys that may appear in a bracket_dimensions section
+_ALL_GEO_KEYS = frozenset({
+    "flange_width", "flange_height", "web_height", "thickness", "fillet_radius",
+    "channel_width", "wall_height", "channel_depth",
+})
 
 
 def _parse_value_unit(raw: str):
@@ -106,10 +118,14 @@ def parse_brief(text: str) -> tuple[dict, dict]:
     Sections are identified by non-indented lines ending with ":".
     Key-value pairs are indented under their section.
 
+    The bracket_type: key in Bracket dimensions: sets the bracket type.
+    Unknown bracket_type values raise ValueError immediately.
+
     Returns
     -------
     (all_params, constraints) where all_params contains sub-dicts:
-      geometry keys, material{E_pa,nu,rho,Sy_pa}, loads{...}, bcs{...}
+      geometry keys, bracket_type_name, material{E_pa,nu,rho,Sy_pa},
+      loads{...}, bcs{...}
     """
     section = None
     material: dict  = {}
@@ -117,6 +133,7 @@ def parse_brief(text: str) -> tuple[dict, dict]:
     bcs: dict       = {}
     geometry: dict  = {}
     max_mass_kg     = None
+    bracket_type_name: str | None = None
 
     for line in text.splitlines():
         stripped = line.strip()
@@ -124,7 +141,6 @@ def parse_brief(text: str) -> tuple[dict, dict]:
             continue
 
         # Section header: non-indented line containing ":"
-        # Handles both "Load:" and "Material: structural steel"
         if not line[0].isspace() and ":" in stripped:
             section = stripped.split(":")[0].strip().lower().replace(" ", "_")
             continue
@@ -144,8 +160,21 @@ def parse_brief(text: str) -> tuple[dict, dict]:
         canonical = _KEY_ALIASES.get(key, key)
 
         if section in ("bracket_dimensions", "bracket dimensions", "dimensions"):
-            if key in ("flange_width", "flange_height", "web_height", "thickness", "fillet_radius"):
+            if key == "bracket_type":
+                type_name = str(val).strip().lower().replace(" ", "_")
+                if type_name not in KNOWN_TYPE_NAMES:
+                    raise ValueError(
+                        f"Unknown bracket_type {type_name!r}. "
+                        f"Allowed: {sorted(KNOWN_TYPE_NAMES)}"
+                    )
+                bracket_type_name = type_name
+            elif key in _ALL_GEO_KEYS:
                 geometry[key] = si_val
+            else:
+                logger.warning(
+                    "Unknown key %r in 'Bracket dimensions' section — ignored.",
+                    key,
+                )
 
         elif section == "material":
             if canonical in ("E_pa", "nu", "rho", "Sy_pa"):
@@ -166,12 +195,21 @@ def parse_brief(text: str) -> tuple[dict, dict]:
 
         else:
             # Best-effort: put geometry keys in geometry, material keys in material
-            if key in ("flange_width", "flange_height", "web_height", "thickness", "fillet_radius"):
+            if key in _ALL_GEO_KEYS:
+                logger.warning(
+                    "Geometry key %r found outside 'Bracket dimensions' section — "
+                    "accepted but please move it inside the section.",
+                    key,
+                )
                 geometry[key] = si_val
             elif canonical in ("E_pa", "nu", "rho", "Sy_pa"):
                 material[canonical] = si_val
             elif canonical == "max_mass_kg":
                 max_mass_kg = si_val
+
+    # Store bracket_type_name in geometry dict for pipeline resolution
+    if bracket_type_name is not None:
+        geometry["bracket_type_name"] = bracket_type_name
 
     # Build merged params
     all_params = {**geometry}
@@ -179,19 +217,29 @@ def parse_brief(text: str) -> tuple[dict, dict]:
     all_params["loads"]    = loads
     all_params["bcs"]      = bcs
 
+    # --- Phase 0b: material defaults ---
+    material.setdefault("E_pa",  200e9)
+    material.setdefault("nu",    0.3)
+    material.setdefault("rho",   7850.0)
+    material.setdefault("Sy_pa", 250e6)
+
     # Build constraints from CONSTRAINTS defaults, override with Sy and max_mass_kg
     constraints = dict(CONSTRAINTS)
     if "Sy_pa" in material:
         constraints["max_von_mises_pa"] = material["Sy_pa"] / 1.5
-    if max_mass_kg is not None:
-        constraints["max_mass_kg"] = max_mass_kg
+    # --- Phase 0a: always wire max_mass_kg (None = unconstrained) ---
+    constraints["max_mass_kg"] = max_mass_kg
 
     return all_params, constraints
 
 
-def _geo_params(all_params: dict) -> dict:
-    """Extract geometry-only keys."""
-    return {k: all_params[k] for k in GEOMETRY_KEYS if k in all_params}
+def _geo_params(all_params: dict, bracket_type=None) -> dict:
+    """Extract geometry-only keys for the given bracket type."""
+    if bracket_type is None:
+        keys = GEOMETRY_KEYS
+    else:
+        keys = bracket_type.param_keys
+    return {k: all_params[k] for k in keys if k in all_params}
 
 
 def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
@@ -211,7 +259,12 @@ def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
     runs_dir.mkdir(exist_ok=True)
 
     all_params, constraints = parse_brief(brief_text)
-    geo = _geo_params(all_params)
+
+    # --- Resolve bracket type once ---
+    bracket_type = get_type(all_params.get("bracket_type_name", "l_bracket"))
+    logger.info("Bracket type: %s", bracket_type.display_name)
+
+    geo      = _geo_params(all_params, bracket_type)
     material = all_params.get("material", {})
     loads    = all_params.get("loads", {})
     bcs      = all_params.get("bcs", {})
@@ -227,26 +280,32 @@ def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
 
     best_params = None
     best_eval   = None
-    _exhausted  = False   # set True only when every iteration ran without pass/stagnation
+    _exhausted  = False
 
     for iteration in range(1, max_iter + 1):
         iter_dir = runs_dir / f"iter_{iteration:03d}"
         iter_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info("=== Iteration %d ===", iteration)
+        # Generic param logging — works for all bracket types
+        for k in bracket_type.param_keys:
+            if k in geo:
+                logger.info("  %s = %.4f SI", k, geo[k])
 
         try:
             # 1. Geometry
             logger.info("Creating geometry...")
-            step_path = create_geometry(geo, iter_dir)
+            step_path = create_geometry(geo, iter_dir, bracket_type=bracket_type)
 
             # 2. Mesh
             logger.info("Generating mesh...")
             try:
                 mesh_path = generate_mesh(step_path, iter_dir, quality="medium")
             except MeshError:
-                logger.warning("Mesh failed with fillet — retrying without fillet (apply_fillet=False)")
-                step_path = create_geometry(geo, iter_dir, apply_fillet=False)
+                logger.warning("Mesh failed with fillet — retrying without fillet")
+                step_path = create_geometry(
+                    geo, iter_dir, bracket_type=bracket_type, apply_fillet=False
+                )
                 mesh_path = generate_mesh(step_path, iter_dir, quality="medium")
 
             # 2a. Render
@@ -256,7 +315,10 @@ def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
             logger.info("Writing CalculiX .inp...")
             bcs_with_params = dict(bcs)
             bcs_with_params["params"] = geo
-            inp_path = write_inp(mesh_path, loads, bcs_with_params, material, iter_dir)
+            inp_path = write_inp(
+                mesh_path, loads, bcs_with_params, material, iter_dir,
+                bracket_type=bracket_type,
+            )
 
             # 4. Run simulation
             logger.info("Running CalculiX...")
@@ -270,18 +332,22 @@ def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
             # 5a. Render FEA results
             results_render_path = render_results(mesh_path, frd_path, iter_dir)
 
-            # 6. Build metrics dict (merge frd + dat results)
+            # 6. Build metrics dict
             metrics = {**frd_results, **dat_results}
             metrics["params"]  = geo
             metrics["rho"]     = rho
             metrics["Sy_pa"]   = Sy_pa
 
             # 7. Evaluate constraints
-            eval_result = evaluate_constraints(metrics, constraints)
+            eval_result = evaluate_constraints(
+                metrics, constraints, bracket_type=bracket_type
+            )
 
             # 8. Generate report
-            report_path = generate_report(iteration, geo, metrics, eval_result, iter_dir,
-                                          render_path, results_render_path, constraints)
+            report_path = generate_report(
+                iteration, geo, metrics, eval_result, iter_dir,
+                render_path, results_render_path, constraints,
+            )
             logger.info("Report: %s", report_path)
             logger.info(
                 "  mass=%.4f kg  FOS=%.3f  vm=%.2f MPa  disp=%.4f mm  pass=%s",
@@ -292,8 +358,7 @@ def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
                 eval_result["pass"],
             )
 
-            # Track best result: passing design always beats failing;
-            # among same pass/fail status, prefer lower mass.
+            # Track best result
             new_passes  = eval_result["pass"]
             best_passes = best_eval["pass"] if best_eval is not None else False
             new_mass    = eval_result["mass_kg"]
@@ -310,7 +375,10 @@ def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
                 return best_params, best_eval
 
             # 10. Stagnation detection
-            new_geo = propose_params(geo, eval_result["violations"], iteration)
+            new_geo = propose_params(
+                geo, eval_result["violations"], iteration,
+                bracket_type=bracket_type,
+            )
             if new_geo == geo:
                 logger.warning("Optimizer stagnated at iteration %d — stopping.", iteration)
                 break

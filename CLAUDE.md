@@ -10,6 +10,11 @@ FEM analysis in CalculiX, and iterates geometry to simultaneously:
   - Minimize total mass
   - Converge in as few iterations as possible
 
+Supported bracket types (see `bracket_types/` and `docs/coordinate_convention.md`):
+  - **L-bracket** (default): L-shaped web + flange, fixed at x≈0
+  - **T-bracket**: inverted T with central web, fixed at z≈0
+  - **U-bracket** (channel): two walls + base plate, fixed at z≈0
+
 Scope is intentionally limited to bracket geometries. No generalization to
 arbitrary CAD shapes until the bracket pipeline is proven end-to-end.
 
@@ -21,6 +26,7 @@ arbitrary CAD shapes until the bracket pipeline is proven end-to-end.
 - **Solver**:     CalculiX (`ccx` CLI)
 - **Parsing**:    Custom `.frd` block parser in `tools/results.py`
 - **Rendering**:  matplotlib (Agg backend, no display needed)
+- **LLM Agent**:  Anthropic API (`claude-sonnet-4-6`) or OpenAI API (`gpt-5.2`) via tool-use
 - **Language**:   Python 3.10+
 - **Runner**:     Claude Code (CLI)
 
@@ -31,9 +37,19 @@ arbitrary CAD shapes until the bracket pipeline is proven end-to-end.
 bracket-agent/
 ├── CLAUDE.md
 ├── brief.txt            # Example input brief
+├── agent.py             # Conversational CLI: LLM tool-use chat loop (Anthropic + OpenAI)
+├── agent_tools.py       # Tool implementations, session state, brief builder
 ├── pipeline.py          # Main agent loop (parse_brief + run)
 ├── constraints.py       # Constraint definitions + evaluator
 ├── optimizer.py         # Parameter update strategy between iterations
+├── bracket_types/       # Multi-type bracket registry (L/T/U)
+│   ├── __init__.py      # BracketType dataclass, REGISTRY, get_type()
+│   ├── _helpers.py      # L-bracket helper functions (no tool imports)
+│   ├── l_bracket.py     # L-bracket type definition + registration
+│   ├── t_bracket.py     # T-bracket type definition + registration
+│   └── u_bracket.py     # U-bracket type definition + registration
+├── docs/
+│   └── coordinate_convention.md  # Axis/origin convention for all bracket types
 ├── tools/
 │   ├── geometry.py      # Parametric bracket creation via FreeCADCmd
 │   ├── mesh.py          # Gmsh meshing (STEP → C3D10 mesh.inp)
@@ -85,25 +101,38 @@ Boundary conditions:
   fixed face: web back face (all DOF constrained)
 ```
 
-The agent parses this into a `params` dict and a `constraints` dict before
-entering the pipeline loop. Missing `rho` or `Sy` trigger a WARNING and fall
-back to 7850 kg/m³ and 250 MPa respectively.
+The optional `bracket_type:` key in the `Bracket dimensions:` section selects
+the geometry (default `l_bracket`). Unknown values raise `ValueError` immediately.
+All material fields default (E=200 GPa, nu=0.3, rho=7850 kg/m³, Sy=250 MPa) when absent.
 
 ---
 
 ## Bracket Geometry Parameters
 All dims in metres internally. Input accepted in mm and converted on parse.
+See `docs/coordinate_convention.md` for axis orientation per type.
+
+### L-bracket and T-bracket (same 5 keys)
 
 | Key             | Description                        | Optimizer range |
 |-----------------|------------------------------------|-----------------|
-| `flange_width`  | Horizontal arm width               | 0.04 – 0.20 m   |
-| `flange_height` | Horizontal arm out-of-plane depth  | 0.03 – 0.15 m   |
-| `web_height`    | Vertical wall height               | 0.05 – 0.25 m   |
+| `flange_width`  | Horizontal arm width (L) / span (T)| 0.04 – 0.20 m   |
+| `flange_height` | Out-of-plane depth                 | 0.03 – 0.15 m   |
+| `web_height`    | Vertical wall / web height         | 0.05 – 0.25 m   |
 | `thickness`     | Uniform wall thickness             | 0.003 – 0.020 m |
 | `fillet_radius` | Interior corner fillet radius      | 0.002 – 0.015 m |
 
+### U-bracket (channel section)
+
+| Key             | Description                        | Optimizer range |
+|-----------------|------------------------------------|-----------------|
+| `channel_width` | Total channel width                | 0.04 – 0.20 m   |
+| `wall_height`   | Side wall height                   | 0.05 – 0.25 m   |
+| `channel_depth` | Out-of-plane depth                 | 0.03 – 0.15 m   |
+| `thickness`     | Uniform wall thickness             | 0.003 – 0.020 m |
+| `fillet_radius` | Base-wall interior fillet radius   | 0.002 – 0.015 m |
+
 Geometric constraint always enforced: `fillet_radius ≤ thickness × 0.45`.
-This is applied after clamping to `PARAM_BOUNDS`; the geometric limit takes
+This is applied after clamping to param bounds; the geometric limit takes
 priority over the lower bound when they conflict (very thin sections).
 
 ---
@@ -117,6 +146,7 @@ parse_brief(text) → params dict + constraints dict
    ↓
 ┌─────────────────────────────────────────────────────────┐
 │  iter N                                                 │
+│  0. log current params (mm) at INFO                     │
 │  1. create_geometry(params)     → geometry.step         │
 │  2. generate_mesh(step, qual)   → mesh.inp              │
 │  2a. render_mesh(mesh)          → render.png            │
@@ -140,17 +170,108 @@ Max iterations: **10** (hard limit — log warning, return best so far).
 
 ---
 
+## Conversational Agent Layer
+
+`agent.py` + `agent_tools.py` form a thin conversational layer on top of the
+pipeline. The LLM acts as orchestrator via the tool-use API; Python dispatches
+tool calls and feeds results back.
+
+### Entry point: `agent.py`
+
+```
+User (plain English)
+    │
+    ▼
+agent.py  ─── LLM API (Anthropic or OpenAI) ──► LLM
+    │              ↑  tool_use calls
+    ▼              │
+dispatch_tool()
+    │
+    ├─ run_pipeline        → agent_tools.run_pipeline_tool()
+    ├─ modify_and_run      → agent_tools.modify_and_run_tool()
+    └─ read_last_results   → agent_tools.read_last_results_tool()
+```
+
+Backend selection (checked in order):
+1. `AGENT_BACKEND` env var: `"anthropic"` or `"openai"`
+2. Auto-detect: `ANTHROPIC_API_KEY` present → Anthropic; `OPENAI_API_KEY` → OpenAI
+
+Models: `claude-sonnet-4-6` (Anthropic), `gpt-5.2` (OpenAI default, override
+with `OPENAI_MODEL` env var).
+
+Tool definitions are stored once in `_TOOL_DEFS` (neutral JSON Schema
+`parameters` key) and converted at runtime:
+- `_anthropic_tools()` → wraps with `input_schema`
+- `_openai_tools()`    → wraps with `{"type": "function", "function": {...}}`
+
+### `agent_tools.py`
+
+```python
+_session_state = {
+    "last_params_mm": None,  # optimized geometry from last run (mm)
+    "last_load_n":    None,  # load magnitude from last run
+    "last_material":  None,  # material dict (E_gpa, nu, rho, Sy_mpa)
+    "last_run_dir":   None,  # Path to last runs/iter_NNN
+}
+
+build_brief(params: dict) -> str
+# Renders the plain-text brief format that parse_brief() expects.
+# Keys: flange_width_mm, flange_height_mm, web_height_mm, thickness_mm,
+#       fillet_radius_mm, E_gpa, nu, rho, Sy_mpa, load_n, max_mass_kg.
+# Brief is constructed internally; never shown to the user.
+
+run_pipeline_tool(inp: dict) -> dict
+# Merges inp over defaults, builds brief, calls pipeline.run().
+# Prints "[Running FEM pipeline...]" before calling.
+# Updates _session_state on completion.
+# Returns: {status, iterations_run, mass_kg, fos, max_vm_mpa,
+#           max_disp_mm, stress_utilisation_pct, violations,
+#           final_params_mm, output_dir}
+
+modify_and_run_tool(inp: dict) -> dict
+# Loads prior geometry/load/material from _session_state.
+# Merges inp["changes"] over session state, rebuilds brief, reruns.
+
+read_last_results_tool(inp: dict) -> dict
+# Reads the highest-numbered runs/iter_NNN (or inp["iter_dir"]).
+# Parses summary.md (FEM Results section) + params.json.
+# Returns the same structured dict — no new simulation.
+```
+
+### Three LLM tools
+
+| Tool | Required input | When the LLM calls it |
+|------|---------------|-----------------------|
+| `run_pipeline` | `load_n` | New design from scratch |
+| `modify_and_run` | `changes` dict | Incremental change to current design |
+| `read_last_results` | *(none)* | Inspect prior run, no new simulation |
+
+### Coding rules for the agent layer
+- `_session_state` is the only module-level state; all tool functions are
+  otherwise side-effect-free w.r.t. the filesystem (pipeline.run() owns files)
+- `build_brief()` output must always parse correctly through `parse_brief()`
+- Both SDK imports (`anthropic`, `openai`) are deferred inside their respective
+  `_run_*` functions — the module imports cleanly even if neither is installed
+- Do NOT add a `modify_geometry` tool — geometry changes must go through FEM
+- Do NOT expose `propose_params` as a tool — the optimizer is internal to the loop
+
+---
+
 ## Tool Contracts
 
 ### tools/geometry.py
 ```python
-create_geometry(params: dict, output_dir: Path, apply_fillet: bool = True) -> Path
+create_geometry(params: dict, output_dir: Path, bracket_type=None,
+                apply_fillet: bool = True) -> Path
 # Runs FreeCADCmd, returns path to geometry.step
+# bracket_type: BracketType | None — selects freecad_script_fn (default: l_bracket)
 # FreeCAD works in mm internally; script scales to SI metres before exportStep
+# params.json written with metadata keys including _bracket_type (and _schema_version)
 # Raises GeometryError if FreeCAD exits non-zero or STEP missing
 
 modify_geometry(step_path: Path, deltas: dict, output_dir: Path) -> Path
-# Loads params.json beside step_path, merges deltas, calls create_geometry
+# Reads _bracket_type from params.json beside step_path; missing → WARNING + "l_bracket";
+# unknown value → GeometryError. Merges deltas, calls create_geometry.
 ```
 
 ### tools/mesh.py
@@ -165,11 +286,12 @@ generate_mesh(step_path: Path, output_dir: Path, quality: str = "medium") -> Pat
 ### tools/calculix.py
 ```python
 write_inp(mesh_path: Path, loads: dict, bcs: dict,
-          material: dict, output_dir: Path) -> Path
+          material: dict, output_dir: Path, bracket_type=None) -> Path
 # Assembles full analysis.inp from mesh + material + BCs
+# bracket_type: BracketType | None — selects fixed_nodes_fn and tip_node_fn
 # Only C3D* elements are included in EALL; surface/edge elements dropped
-# Fixed face: nodes with x ≈ 0 (tolerance 1e-6; 1% x-range fallback with WARNING)
-# Tip node: closest node to (flange_width, fh/2, web_height - thickness/2)
+# Fixed face: determined by bracket_type.fixed_nodes_fn
+# Raises SimulationError if fixed_nodes_fn returns []
 
 run_simulation(inp_path: Path) -> tuple[Path, Path]
 # Shells out: ccx -i <stem>  (cwd = inp_path.parent)
@@ -221,7 +343,10 @@ CONSTRAINTS = {
     "max_mass_kg":          None,          # Set from brief; None = unconstrained
 }
 
-evaluate_constraints(metrics: dict, constraints: dict) -> dict
+evaluate_constraints(metrics: dict, constraints: dict,
+                     bracket_type=None) -> dict
+# bracket_type: BracketType | None — uses bracket_type.mass_fn when provided,
+#               falls back to L-bracket _compute_mass when None
 # Returns: { pass, violations: list[str], mass_kg, fos, stress_utilisation }
 # Violation string prefixes: "stress:", "fos:", "displacement:", "mass:"
 # Mass computed analytically from geometry params (no double-counting at corner)
@@ -237,7 +362,9 @@ PARAM_BOUNDS = {
     "fillet_radius": (0.002, 0.015),
 }
 
-propose_params(current_params: dict, violations: list, iteration: int) -> dict
+propose_params(current_params: dict, violations: list, iteration: int,
+               bracket_type=None) -> dict
+# bracket_type: BracketType | None — delegates to bracket_type.optimizer.propose_fn
 # stress/fos violation  → thickness *= 1.10, fillet_radius *= 1.20
 # displacement only     → web_height *= 1.10 (fallback: thickness *= 1.10)
 # displacement + stress → also web_height *= 1.05
