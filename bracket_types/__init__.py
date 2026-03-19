@@ -22,7 +22,11 @@ REGISTRY: dict[str, "BracketType"] = {}
 class OptimizerStrategy:
     """Optimization strategy for a bracket type."""
     param_bounds: dict    # {key: (lo_m, hi_m)}
-    propose_fn: Callable  # (current_params, violations, iteration) -> dict
+    propose_fn: Callable
+    # Signature: (current_params, violations, iteration,
+    #              metrics=None, constraints=None) -> dict
+    # metrics and constraints are optional — functions must accept **kwargs or
+    # explicit keyword args with None defaults for backward compatibility.
 
 
 @dataclass
@@ -38,6 +42,11 @@ class BracketType:
     tip_node_fn: Callable          # (nodes, params_si) -> node_id
     mass_fn: Callable              # (params_si, rho) -> float kg
     optimizer: OptimizerStrategy
+    presizing_fn:    Callable | None = None  # (params, loads, material, constraints) -> params
+    load_patch_fn:   Callable | None = None
+    # (nodes, params_si, k=5) -> list[int]
+    # k nearest nodes to load application point.
+    # None → write_inp() uses [tip_node_fn()] as single-element list (old behaviour).
 
 
 def get_type(name: str) -> BracketType:

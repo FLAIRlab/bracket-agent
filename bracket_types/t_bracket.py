@@ -21,6 +21,7 @@ from pathlib import Path
 
 from bracket_types import REGISTRY, BracketType, OptimizerStrategy
 from bracket_types._helpers import _l_propose_params, _L_PARAM_BOUNDS
+from tools.presizing import t_presizing
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +152,19 @@ def _t_tip_node(nodes: dict, params: dict) -> int:
     return min(nodes.keys(), key=lambda nid: math.dist(nodes[nid], tip_target))
 
 
+def _t_load_patch(nodes: dict, params: dict, k: int = 5) -> list:
+    """Return k nearest node IDs to the T-bracket load application point."""
+    all_x = [xyz[0] for xyz in nodes.values()]
+    all_y = [xyz[1] for xyz in nodes.values()]
+    all_z = [xyz[2] for xyz in nodes.values()]
+    fw = params.get("flange_width",  max(all_x))
+    fh = params.get("flange_height", (max(all_y) + min(all_y)) / 2.0)
+    wh = params.get("web_height",    max(all_z))
+    t  = params.get("thickness",     (max(all_z) - min(all_z)) * 0.05)
+    target = (fw / 2.0, fh / 2.0, wh - t / 2.0)
+    return sorted(nodes, key=lambda nid: math.dist(nodes[nid], target))[:k]
+
+
 # ---------------------------------------------------------------------------
 # Mass computation (T-bracket)
 # ---------------------------------------------------------------------------
@@ -211,6 +225,8 @@ T_BRACKET = BracketType(
         param_bounds=_L_PARAM_BOUNDS,
         propose_fn=_l_propose_params,
     ),
+    presizing_fn=t_presizing,
+    load_patch_fn=_t_load_patch,
 )
 
 REGISTRY["t_bracket"] = T_BRACKET

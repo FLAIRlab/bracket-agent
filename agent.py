@@ -238,7 +238,8 @@ _TOOL_DEFS = [
                 "changes": {
                     "type": "object",
                     "description": (
-                        "Dict of parameter overrides. Accepted keys: load_n, "
+                        "Dict of parameter overrides. Omit or pass {} to rerun the previous "
+                        "design unchanged. Accepted keys: load_n, "
                         "bracket_type (to switch type), flange_width_mm, "
                         "flange_height_mm, web_height_mm, channel_width_mm, "
                         "wall_height_mm, channel_depth_mm, thickness_mm, "
@@ -247,7 +248,7 @@ _TOOL_DEFS = [
                     ),
                 },
             },
-            "required": ["changes"],
+            "required": [],
         },
     },
     {

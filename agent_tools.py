@@ -307,13 +307,13 @@ def modify_and_run_tool(inp: dict) -> dict:
     """
     Back-end for the modify_and_run tool.
 
-    inp must contain 'changes' — a dict of parameter overrides.
+    inp may contain 'changes' — a dict of parameter overrides. Omit or pass {}
+    to rerun the previous design with no geometry/load changes.
     Merges changes over the previous session state and reruns.
     Accepts optional 'bracket_type' in changes to switch bracket type.
     """
     changes = dict(inp.get("changes") or {})   # copy — never mutate caller's dict
-    if not changes:
-        return {"error": "'changes' dict is required and must not be empty."}
+    # empty changes → rerun previous design unchanged (still guarded by last_load_n check below)
 
     if _session_state["last_load_n"] is None:
         return {"error": "No previous run in this session. Please use run_pipeline first."}

@@ -26,25 +26,28 @@ An AI agent that accepts a plain-text bracket design brief, builds a parametric 
 plain-text brief
       │
       ▼
- parse_brief()       → params dict + constraints dict
+ parse_brief()         → params dict + constraints dict
+      │
+      ▼  (once, before loop)
+ pre_size()            → warm-start geometry from beam/column theory
       │
       ▼  (repeat up to 10×)
- create_geometry()   → geometry.step       (FreeCAD headless)
- generate_mesh()     → mesh.inp            (Gmsh, C3D10 quad tets)
- render_mesh()       → render.png          (4-view mesh visualisation)
- write_inp()         → analysis.inp        (CalculiX input file)
- run_simulation()    → analysis.frd/.dat   (CalculiX static solve)
- render_results()    → results_render.png  (stress + displacement maps)
- parse_frd/dat()     → metrics dict        (stress, displacement)
+ create_geometry()     → geometry.step       (FreeCAD headless)
+ generate_mesh()       → mesh.inp            (Gmsh, C3D10 quad tets)
+ render_mesh()         → render.png          (4-view mesh visualisation)
+ write_inp()           → analysis.inp        (CalculiX input file)
+ run_simulation()      → analysis.frd/.dat   (CalculiX static solve)
+ render_results()      → results_render.png  (stress + displacement maps)
+ parse_frd/dat()       → metrics dict        (stress, displacement)
  evaluate_constraints() → pass/fail + violations
       │
-      ├─ PASS → generate_report() → stop
+      ├─ PASS → generate_report()
+      │         if slim_after_pass: try lighter → continue
+      │         else: stop
       └─ FAIL → propose_params()  → next iteration
 ```
 
 Best-result tracking: a passing design always beats any failing design; among designs of the same pass/fail status, the lighter one wins.
-
-The optimizer adjusts `thickness` and `fillet_radius` first (cheapest changes). `web_height` is increased only for displacement violations. `thickness` is reduced when the only active constraint is mass.
 
 ---
 
@@ -184,6 +187,12 @@ runs/iter_003/
 python pipeline.py brief.txt
 ```
 
+Optional keyword arguments when calling `pipeline.run()` directly:
+
+```python
+slim_after_pass : bool = False   # set True to continue after first pass for mass minimisation
+```
+
 ### Input format
 
 The optional `bracket_type:` key in the `Bracket dimensions:` section selects the geometry (default `l_bracket`). Unknown values raise `ValueError` immediately.
@@ -258,11 +267,12 @@ bracket-agent/
 │   ├── calculix.py      # write_inp() + run_simulation() (ccx subprocess)
 │   ├── results.py       # parse_frd() / parse_frd_nodal() / parse_dat()
 │   ├── report.py        # generate_report() -> summary.md
-│   └── render.py        # render_mesh() + render_results() -> PNG
+│   ├── render.py        # render_mesh() + render_results() -> PNG
+│   └── presizing.py     # Analytical pre-sizing warm-start (beam/column theory)
 ├── runs/                # Per-iteration output (git-ignored)
 └── tests/
     ├── test_agent.py        # ~55 tests: agent layer (build_brief, tool schemas, dispatch, mocks)
-    ├── test_bracket.py      # 20 tests: pure unit, geometry, mesh, calculix, integration
+    ├── test_bracket.py      # 32 tests: pure unit, geometry, mesh, calculix, integration
     ├── test_bracket_types.py# ~70 tests: registry, L/T/U mass, fixed nodes, tip nodes, optimizer
     └── test_smoke.py        # 6 end-to-end pipeline scenarios
 ```
@@ -316,21 +326,32 @@ L-bracket and T-bracket share the same strategy (same `propose_fn` and param bou
 
 | Violation type | Action |
 |---------------|--------|
-| Stress or FOS | `thickness x 1.10`, `fillet_radius x 1.20` |
-| Displacement + stress | Above, plus `web_height x 1.05` |
-| Displacement only | `web_height x 1.10` (falls back to `thickness x 1.10` at bound) |
-| Mass only | `thickness x 0.95` |
+| Stress or FOS | `thickness` and `fillet_radius` scaled by `_physics_scale(vm, limit, exp=2, iter)` — multiplier ∝ √(violation ratio), iteration-damped |
+| Displacement + stress | Above, plus `web_height × 1.05` |
+| Displacement only | `web_height` scaled by `_physics_scale(disp, limit, exp=3, iter)` — multiplier ∝ ∛(violation ratio); falls back to thickness at bound |
+| Mass only | `thickness × 0.95` |
+| No violations (slim_after_pass=True) | `thickness × 0.97` (mass descent); fillet adjusted to maintain constraint |
 
-U-bracket uses an equivalent strategy with `wall_height` in place of `web_height`:
+U-bracket uses an equivalent strategy with `wall_height` in place of `web_height`.
 
-| Violation type | Action |
-|---------------|--------|
-| Stress or FOS | `thickness x 1.10`, `fillet_radius x 1.20` |
-| Displacement + stress | Above, plus `wall_height x 1.05` |
-| Displacement only | `wall_height x 1.10` (falls back to `thickness x 1.10` at bound) |
-| Mass only | `thickness x 0.95` |
+> `_physics_scale` clamps to `[1.02, 1.40]` at iteration 1, shrinking to `[1.02, 1.10]`
+> by iteration 10 to prevent oscillation. Falls back to legacy `1.10`/`1.20` if
+> `metrics` or `constraints` are not provided.
 
 All parameters are clamped to their bounds after update; then `fillet_radius <= thickness x 0.45` is enforced (geometric constraint takes priority over lower bound).
+
+### Pre-sizing warm-start
+
+Before iteration 1, `pipeline.run()` calls `bracket_type.presizing_fn()` from
+`tools/presizing.py` to derive minimum geometry from beam/column theory:
+
+| Type | Formula |
+|------|---------|
+| L-bracket | `wh ≥ √(6·F·fw / (fh·σ_allow))` and `wh ≥ ∛(4·F·fw³ / (E·fh·δ_allow))` |
+| T-bracket | Same as L with `fw/2` as moment arm (symmetric loading) |
+| U-bracket | `t ≥ max(F/(cd·σ_allow), √(6·F·wh/(cd·σ_allow)))` |
+
+User-supplied values are never lowered (only raised to meet the minimum).
 
 ---
 

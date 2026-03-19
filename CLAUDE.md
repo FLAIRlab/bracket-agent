@@ -56,7 +56,8 @@ bracket-agent/
 │   ├── calculix.py      # .inp writer + ccx runner
 │   ├── results.py       # .frd / .dat parser (fixed-width block reader)
 │   ├── report.py        # Per-iteration summary.md generator
-│   └── render.py        # Mesh + FEA result renders (matplotlib, Agg)
+│   ├── render.py        # Mesh + FEA result renders (matplotlib, Agg)
+│   └── presizing.py     # Analytical pre-sizing warm-start (beam/column theory)
 ├── runs/
 │   └── iter_001/        # One folder per iteration (immutable after creation)
 │       ├── params.json
@@ -69,7 +70,7 @@ bracket-agent/
 │       ├── results_render.png  # 4-view FEA results render (stress + displacement)
 │       └── summary.md
 └── tests/
-    └── test_bracket.py  # 20 tests across all pipeline stages
+    └── test_bracket.py  # 32 tests across all pipeline stages
 ```
 
 ---
@@ -144,6 +145,8 @@ INPUT: plain-text brief
    ↓
 parse_brief(text) → params dict + constraints dict
    ↓
+pre_size(geo, loads, material, constraints)  (once — before loop)
+   ↓
 ┌─────────────────────────────────────────────────────────┐
 │  iter N                                                 │
 │  0. log current params (mm) at INFO                     │
@@ -158,7 +161,9 @@ parse_brief(text) → params dict + constraints dict
 │       → { pass, violations, mass_kg, fos }             │
 │  7. generate_report(...)        → summary.md            │
 │  8. if pass  → STOP (return lightest passing design)    │
-│     if fail  → propose_params(violations) → loop       │
+│              if slim_after_pass: propose slim → loop    │
+│     if fail  → propose_params(violations, metrics)      │
+│               → loop                                    │
 └─────────────────────────────────────────────────────────┘
    ↓
 OUTPUT: best params dict + final eval dict
@@ -288,9 +293,12 @@ generate_mesh(step_path: Path, output_dir: Path, quality: str = "medium") -> Pat
 write_inp(mesh_path: Path, loads: dict, bcs: dict,
           material: dict, output_dir: Path, bracket_type=None) -> Path
 # Assembles full analysis.inp from mesh + material + BCs
-# bracket_type: BracketType | None — selects fixed_nodes_fn and tip_node_fn
+# bracket_type: BracketType | None — selects fixed_nodes_fn, tip_node_fn, load_patch_fn
 # Only C3D* elements are included in EALL; surface/edge elements dropped
 # Fixed face: determined by bracket_type.fixed_nodes_fn
+# Load: distributed over load_patch_fn result (k=5 nodes, force/k each);
+#       falls back to single tip_node_fn node when load_patch_fn is None.
+#       loads["load_patch_k"] overrides k. Force conservation always holds.
 # Raises SimulationError if fixed_nodes_fn returns []
 
 run_simulation(inp_path: Path) -> tuple[Path, Path]
@@ -323,6 +331,23 @@ render_mesh(mesh_path: Path, output_dir: Path) -> Path | None
 render_results(mesh_path: Path, frd_path: Path, output_dir: Path) -> Path | None
 # 2×2 panel PNG: Von Mises stress + displacement magnitude, isometric + front
 # Coloured by per-node FEA scalar (jet for stress, viridis for displacement)
+```
+
+### tools/presizing.py
+```python
+l_presizing(params, loads, material, constraints) -> dict
+# L-bracket beam-theory warm-start:
+#   wh ≥ max(sqrt(6*F*fw/(fh*σ_allow)), cbrt(4*F*fw³/(E*fh*δ_allow)))
+#   t  ≥ max(3*F/(2*fh*σ_allow), bounds_lo)
+# Never lowers params below user-supplied values. Clamps to param bounds.
+# Fillet reduced only if needed for fillet ≤ thickness × 0.45.
+
+t_presizing(params, loads, material, constraints) -> dict
+# Same as L-bracket with fw/2 as moment arm (symmetric T load).
+
+u_presizing(params, loads, material, constraints) -> dict
+# U-bracket: t ≥ max(F/(cd*σ_allow), sqrt(6*F*wh/(cd*σ_allow)), bounds_lo)
+# Only thickness (and fillet) are updated — wall_height/channel_width unchanged.
 ```
 
 ### tools/report.py
@@ -363,10 +388,13 @@ PARAM_BOUNDS = {
 }
 
 propose_params(current_params: dict, violations: list, iteration: int,
-               bracket_type=None) -> dict
+               bracket_type=None, metrics=None, constraints=None) -> dict
 # bracket_type: BracketType | None — delegates to bracket_type.optimizer.propose_fn
-# stress/fos violation  → thickness *= 1.10, fillet_radius *= 1.20
-# displacement only     → web_height *= 1.10 (fallback: thickness *= 1.10)
+# no violations (slim_after_pass) → thickness *= 0.97; fillet adjusted
+# stress/fos violation  → thickness and fillet_radius scaled by _physics_scale(vm, lim, exp=2)
+#                         legacy fallback (1.10/1.20) when metrics/constraints absent
+# displacement only     → web_height scaled by _physics_scale(disp, lim, exp=3)
+#                         legacy fallback (1.10) when metrics/constraints absent
 # displacement + stress → also web_height *= 1.05
 # mass only             → thickness *= 0.95
 # Clamp to PARAM_BOUNDS first, then enforce fillet_radius <= thickness * 0.45
@@ -399,6 +427,38 @@ Record layout (all ASCII, latin-1 encoding):
 - ` -3`                     — end of block
 
 Von Mises computed from 6 stress components: `sqrt(0.5*((sxx-syy)²+(syy-szz)²+(szz-sxx)²+6*(sxy²+sxz²+syz²)))`
+
+---
+
+## Additional Contract Notes
+
+### bracket_types/__init__.py — `BracketType` fields
+```python
+presizing_fn:  Callable | None = None  # (params, loads, material, constraints) -> params
+                                        # None → pre-sizing skipped silently
+load_patch_fn: Callable | None = None  # (nodes, params_si, k=5) -> list[int]
+                                        # k nearest nodes to load application point.
+                                        # None → write_inp() uses [tip_node_fn()] single-node
+                                        #         (old behaviour; no patch load).
+```
+
+### bracket_types/_helpers.py — `_physics_scale`
+```python
+_physics_scale(actual, limit, exponent, iteration=1) -> float
+# Returns the dimension multiplier from beam-theory scaling laws:
+#   exponent=2 → bending stress (σ ∝ 1/h²) → multiplier = (actual/limit)^0.5
+#   exponent=3 → deflection    (δ ∝ 1/h³) → multiplier = (actual/limit)^(1/3)
+# Clamped to [1.02, max(1.10, 1.40-0.03*(iter-1))].
+# Returns 1.0 for actual≤limit or invalid inputs (NaN, inf, limit≤0, exp≤0).
+```
+
+### pipeline.py — `run()` signature
+```python
+def run(brief_text: str, max_iter: int = 10,
+        slim_after_pass: bool = False) -> tuple[dict, dict]:
+# slim_after_pass=False: stop on first passing design (default, legacy)
+# slim_after_pass=True:  continue reducing mass after first pass
+```
 
 ---
 

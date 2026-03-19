@@ -587,6 +587,140 @@ def test_write_inp_tip_nset(tmp_path):
     assert 10 in tip_ids, f"Expected node 10 in TIP nset, got {tip_ids}"
 
 
+def test_patch_load_force_conservation(tmp_path):
+    """Sum of all per-node CLOAD values must equal load_sign * magnitude (signed)."""
+    from tools.calculix import write_inp
+
+    loads = {"direction": "-Z", "magnitude_n": 500.0}
+    mesh = tmp_path / "mesh.inp"
+    _make_mesh_inp(mesh)
+    inp = write_inp(mesh, loads, _CALC_BCS, _CALC_MAT, tmp_path)
+
+    text = inp.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    total = 0.0
+    in_cload = False
+    for line in lines:
+        if line.strip().upper().startswith("*CLOAD"):
+            in_cload = True
+            continue
+        if in_cload:
+            if line.strip().startswith("*"):
+                break
+            if line.strip():
+                parts = line.split(",")
+                if len(parts) >= 3:
+                    total += float(parts[-1])
+    # Signed sum must equal -500.0 (direction -Z, magnitude 500 N)
+    assert abs(total - (-500.0)) < 1e-6, f"Force sum {total} != -500.0"
+
+
+def test_single_node_fallback_when_no_patch_fn(tmp_path):
+    """load_patch_fn=None → exactly one *CLOAD data line, full magnitude on that node."""
+    from tools.calculix import write_inp
+    from bracket_types import BracketType, OptimizerStrategy
+    from bracket_types._helpers import (
+        _l_build_freecad_script, _l_fillet_constraint, _l_fixed_nodes,
+        _l_tip_node, _l_compute_mass, _l_propose_params, _L_PARAM_BOUNDS,
+    )
+
+    bt_no_patch = BracketType(
+        name="l_bracket_no_patch",
+        display_name="L-bracket (no patch)",
+        param_keys=("flange_width", "flange_height", "web_height", "thickness", "fillet_radius"),
+        defaults_mm={},
+        fillet_constraint=_l_fillet_constraint,
+        freecad_script_fn=_l_build_freecad_script,
+        fixed_nodes_fn=_l_fixed_nodes,
+        tip_node_fn=_l_tip_node,
+        mass_fn=_l_compute_mass,
+        optimizer=OptimizerStrategy(param_bounds=_L_PARAM_BOUNDS, propose_fn=_l_propose_params),
+        presizing_fn=None,
+        load_patch_fn=None,  # explicit None → single-node fallback
+    )
+
+    loads = {"direction": "-Z", "magnitude_n": 500.0}
+    mesh = tmp_path / "mesh.inp"
+    _make_mesh_inp(mesh)
+    inp = write_inp(mesh, loads, _CALC_BCS, _CALC_MAT, tmp_path, bracket_type=bt_no_patch)
+
+    text = inp.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    cload_data = []
+    in_cload = False
+    for line in lines:
+        if line.strip().upper().startswith("*CLOAD"):
+            in_cload = True
+            continue
+        if in_cload:
+            if line.strip().startswith("*"):
+                break
+            if line.strip():
+                cload_data.append(line.strip())
+
+    assert len(cload_data) == 1, f"Expected 1 CLOAD line, got {len(cload_data)}"
+    # Full magnitude on the single node
+    val = float(cload_data[0].split(",")[-1])
+    assert abs(val - (-500.0)) < 1e-6, f"Expected -500.0, got {val}"
+
+
+def test_patch_normalization_with_dirty_input(tmp_path):
+    """load_patch_fn returning duplicates + invalid IDs → valid deduped nodes, correct force sum."""
+    from tools.calculix import write_inp
+    from bracket_types import BracketType, OptimizerStrategy
+    from bracket_types._helpers import (
+        _l_build_freecad_script, _l_fillet_constraint, _l_fixed_nodes,
+        _l_tip_node, _l_compute_mass, _l_propose_params, _L_PARAM_BOUNDS,
+    )
+
+    def _dirty_patch(nodes, params, k=5):
+        # 9999 not in mesh, 10 duplicated, plus 9 and 8 as valid extras
+        return [9999, 10, 10, 9, 8]
+
+    bt_dirty = BracketType(
+        name="l_bracket_dirty",
+        display_name="L-bracket (dirty patch)",
+        param_keys=("flange_width", "flange_height", "web_height", "thickness", "fillet_radius"),
+        defaults_mm={},
+        fillet_constraint=_l_fillet_constraint,
+        freecad_script_fn=_l_build_freecad_script,
+        fixed_nodes_fn=_l_fixed_nodes,
+        tip_node_fn=_l_tip_node,
+        mass_fn=_l_compute_mass,
+        optimizer=OptimizerStrategy(param_bounds=_L_PARAM_BOUNDS, propose_fn=_l_propose_params),
+        presizing_fn=None,
+        load_patch_fn=_dirty_patch,
+    )
+
+    loads = {"direction": "-Z", "magnitude_n": 600.0}
+    mesh = tmp_path / "mesh.inp"
+    _make_mesh_inp(mesh)
+    inp = write_inp(mesh, loads, _CALC_BCS, _CALC_MAT, tmp_path, bracket_type=bt_dirty)
+
+    text = inp.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    cload_data = []
+    in_cload = False
+    for line in lines:
+        if line.strip().upper().startswith("*CLOAD"):
+            in_cload = True
+            continue
+        if in_cload:
+            if line.strip().startswith("*"):
+                break
+            if line.strip():
+                cload_data.append(line.strip())
+
+    # After normalization: 9999 dropped, 10 deduplicated → [10, 9, 8] = 3 valid nodes
+    assert len(cload_data) == 3, f"Expected 3 CLOAD lines after dedup+filter, got {len(cload_data)}"
+    node_ids = [int(l.split(",")[0]) for l in cload_data]
+    assert 9999 not in node_ids, "Invalid node ID 9999 should be filtered out"
+    assert len(set(node_ids)) == len(node_ids), "Duplicate node IDs should be removed"
+    # Signed force sum must equal -600.0
+    total = sum(float(l.split(",")[-1]) for l in cload_data)
+    assert abs(total - (-600.0)) < 1e-6, f"Force sum {total} != -600.0"
+
+
 def test_write_inp_load_direction(tmp_path):
     """CLOAD must apply load on DOF 3 (Z) with a negative value for -Z direction."""
     from tools.calculix import write_inp
@@ -668,3 +802,254 @@ S
     frd_path, dat_path = result
     assert frd_path.exists() and frd_path.stat().st_size > 0
     assert dat_path.exists() and dat_path.stat().st_size > 0
+
+
+# -------------------------------------------------------------------------
+# Phase 1 tests — _physics_scale
+# -------------------------------------------------------------------------
+
+def test_physics_scale_exponent_2():
+    """Stress scaling: multiply h by sqrt(ratio)."""
+    import math
+    from bracket_types._helpers import _physics_scale
+
+    ratio = 1.41
+    r = _physics_scale(ratio * 166e6, 166e6, exponent=2, iteration=1)
+    assert abs(r - math.sqrt(ratio)) < 0.01, f"got {r}, expected {math.sqrt(ratio):.3f}"
+
+
+def test_physics_scale_exponent_3():
+    """Deflection scaling: multiply h by cbrt(ratio)."""
+    from bracket_types._helpers import _physics_scale
+
+    ratio = 2.0
+    r = _physics_scale(ratio * 0.005, 0.005, exponent=3, iteration=1)
+    assert abs(r - ratio ** (1 / 3)) < 0.01, f"got {r}, expected {ratio**(1/3):.3f}"
+
+
+def test_physics_scale_clamped():
+    """Large ratio is clamped to ≤ 1.40 at iteration 1."""
+    from bracket_types._helpers import _physics_scale
+
+    r = _physics_scale(100.0 * 166e6, 166e6, exponent=2, iteration=1)
+    assert r <= 1.40, f"expected ≤ 1.40, got {r}"
+    assert r >= 1.02
+
+
+def test_physics_scale_fallback():
+    """actual ≤ limit returns 1.0."""
+    from bracket_types._helpers import _physics_scale
+
+    assert _physics_scale(100e6, 166e6, exponent=2) == 1.0
+    assert _physics_scale(166e6, 166e6, exponent=2) == 1.0
+
+
+def test_physics_scale_invalid_inputs():
+    """limit=0 or exponent=0 returns 1.0 (no crash)."""
+    from bracket_types._helpers import _physics_scale
+
+    assert _physics_scale(200e6, 0.0, exponent=2) == 1.0
+    assert _physics_scale(200e6, 166e6, exponent=0) == 1.0
+    assert _physics_scale(200e6, -1.0, exponent=2) == 1.0
+
+
+def test_physics_scale_nonfinite_inputs():
+    """NaN or inf in actual/limit returns 1.0 (no crash)."""
+    import math
+    from bracket_types._helpers import _physics_scale
+
+    assert _physics_scale(float("nan"), 166e6, exponent=2) == 1.0
+    assert _physics_scale(float("inf"), 166e6, exponent=2) == 1.0
+    assert _physics_scale(200e6, float("nan"), exponent=2) == 1.0
+    assert _physics_scale(200e6, float("inf"), exponent=2) == 1.0
+
+
+def test_physics_scale_iteration_clamp():
+    """iteration=0 or negative behaves as iter 1 (no over-aggressive cap)."""
+    from bracket_types._helpers import _physics_scale
+
+    r_zero = _physics_scale(10.0 * 166e6, 166e6, exponent=2, iteration=0)
+    r_neg  = _physics_scale(10.0 * 166e6, 166e6, exponent=2, iteration=-5)
+    r_one  = _physics_scale(10.0 * 166e6, 166e6, exponent=2, iteration=1)
+    assert r_zero == r_one
+    assert r_neg  == r_one
+
+
+def test_physics_scale_iteration_damping():
+    """Same ratio at iter 1 vs iter 10 → smaller multiplier at iter 10."""
+    from bracket_types._helpers import _physics_scale
+
+    r1  = _physics_scale(5.0 * 166e6, 166e6, exponent=2, iteration=1)
+    r10 = _physics_scale(5.0 * 166e6, 166e6, exponent=2, iteration=10)
+    assert r10 < r1, f"iter10 ({r10:.3f}) should be less than iter1 ({r1:.3f})"
+
+
+def test_propose_severity_high_vs_low():
+    """High-stress violation → larger thickness step than low-stress."""
+    from bracket_types._helpers import _l_propose_params
+
+    params = {
+        "flange_width": 0.08, "flange_height": 0.06, "web_height": 0.10,
+        "thickness": 0.006, "fillet_radius": 0.004,
+    }
+    constraints = {"max_von_mises_pa": 166.67e6, "max_displacement_m": 0.005}
+    violations  = ["stress: exceeds allowable"]
+
+    m_high = {"max_von_mises_pa": 220e6, "max_displacement_m": 0.001}
+    m_low  = {"max_von_mises_pa": 175e6, "max_displacement_m": 0.001}
+
+    p_hi = _l_propose_params(params, violations, 1, metrics=m_high, constraints=constraints)
+    p_lo = _l_propose_params(params, violations, 1, metrics=m_low,  constraints=constraints)
+    assert p_hi["thickness"] > p_lo["thickness"], "severity scaling failed"
+
+
+def test_propose_metrics_none_fallback():
+    """metrics=None → fixed 1.10 legacy multiplier."""
+    from bracket_types._helpers import _l_propose_params
+
+    params = {
+        "flange_width": 0.08, "flange_height": 0.06, "web_height": 0.10,
+        "thickness": 0.006, "fillet_radius": 0.004,
+    }
+    violations = ["stress: exceeds allowable"]
+    new = _l_propose_params(params, violations, 1, metrics=None, constraints=None)
+    assert abs(new["thickness"] / params["thickness"] - 1.10) < 1e-9
+
+
+def test_propose_partial_metrics_fallback():
+    """Missing 'max_von_mises_pa' key in metrics → legacy 1.10, no KeyError."""
+    from bracket_types._helpers import _l_propose_params
+
+    params = {
+        "flange_width": 0.08, "flange_height": 0.06, "web_height": 0.10,
+        "thickness": 0.006, "fillet_radius": 0.004,
+    }
+    constraints = {"max_von_mises_pa": 166.67e6}
+    # metrics present but missing the expected key
+    m_partial = {"max_displacement_m": 0.003}
+    violations = ["stress: exceeds allowable"]
+    new = _l_propose_params(params, violations, 1,
+                            metrics=m_partial, constraints=constraints)
+    assert abs(new["thickness"] / params["thickness"] - 1.10) < 1e-9
+
+
+# -------------------------------------------------------------------------
+# Phase 2 tests — slim branch
+# -------------------------------------------------------------------------
+
+def test_slim_step_reduces_thickness():
+    """violations=[] → thickness × 0.97 (mass descent)."""
+    from bracket_types._helpers import _l_propose_params
+
+    params = {
+        "flange_width": 0.08, "flange_height": 0.06, "web_height": 0.10,
+        "thickness": 0.010, "fillet_radius": 0.004,
+    }
+    new = _l_propose_params(params, [], iteration=1)
+    assert abs(new["thickness"] - params["thickness"] * 0.97) < 1e-9
+    assert new["web_height"] == params["web_height"]   # structural dims unchanged
+
+
+def test_slim_step_clamped_at_bound():
+    """thickness already at lower bound → no change (stagnation signal)."""
+    from bracket_types._helpers import _l_propose_params
+
+    params = {
+        "flange_width": 0.08, "flange_height": 0.06, "web_height": 0.10,
+        "thickness": 0.003,   # == _L_PARAM_BOUNDS["thickness"][0]
+        "fillet_radius": 0.001,
+    }
+    new = _l_propose_params(params, [], iteration=1)
+    assert new == params
+
+
+def test_fillet_reduced_with_thickness():
+    """After slim, fillet_radius ≤ new_thickness × 0.45."""
+    from bracket_types._helpers import _l_propose_params
+
+    params = {
+        "flange_width": 0.08, "flange_height": 0.06, "web_height": 0.10,
+        "thickness": 0.010, "fillet_radius": 0.0045,  # at limit: 0.010*0.45
+    }
+    new = _l_propose_params(params, [], iteration=1)
+    assert new["fillet_radius"] <= new["thickness"] * 0.45 + 1e-12
+
+
+def test_slim_step_u_bracket():
+    """U-bracket slim: wall_height unchanged, only thickness reduced."""
+    from bracket_types.u_bracket import _u_propose_params
+
+    params = {
+        "channel_width": 0.08, "wall_height": 0.10, "channel_depth": 0.06,
+        "thickness": 0.010, "fillet_radius": 0.004,
+    }
+    new = _u_propose_params(params, [], iteration=1)
+    assert abs(new["thickness"] - params["thickness"] * 0.97) < 1e-9
+    assert new["wall_height"] == params["wall_height"]
+
+
+# -------------------------------------------------------------------------
+# Phase 3 tests — pre-sizing
+# -------------------------------------------------------------------------
+
+def test_presizing_raises_wh_l():
+    """L-bracket pre-sizing: wh_out ≥ analytical formula."""
+    import math
+    from tools.presizing import l_presizing
+
+    F, fw, fh = 2000.0, 0.08, 0.06
+    Sy, FOS = 250e6, 1.5
+    σ_allow = Sy / FOS
+    wh_theory = math.sqrt(6.0 * F * fw / (fh * σ_allow))
+
+    params = {
+        "flange_width": fw, "flange_height": fh, "web_height": 0.05,
+        "thickness": 0.003, "fillet_radius": 0.002,
+    }
+    loads    = {"magnitude_n": F}
+    material = {"E_pa": 200e9, "Sy_pa": Sy}
+    constr   = {"min_factor_of_safety": FOS, "max_displacement_m": 0.005}
+
+    out = l_presizing(params, loads, material, constr)
+    assert out["web_height"] >= wh_theory - 1e-9
+
+
+def test_presizing_never_reduces():
+    """All pre-sized geometry params ≥ user-supplied values (except fillet if constrained)."""
+    from tools.presizing import l_presizing
+
+    params = {
+        "flange_width": 0.12, "flange_height": 0.08, "web_height": 0.20,
+        "thickness": 0.018, "fillet_radius": 0.008,
+    }
+    loads    = {"magnitude_n": 500.0}
+    material = {"E_pa": 200e9, "Sy_pa": 250e6}
+    constr   = {"min_factor_of_safety": 1.5, "max_displacement_m": 0.005}
+
+    out = l_presizing(params, loads, material, constr)
+    for key in ("web_height", "thickness"):
+        assert out[key] >= params[key] - 1e-12, f"{key}: {out[key]} < {params[key]}"
+
+
+def test_presizing_none_no_effect():
+    """presizing_fn=None → geo unchanged (skipped silently)."""
+    from bracket_types import BracketType, OptimizerStrategy
+    from bracket_types._helpers import (
+        _l_build_freecad_script, _l_fillet_constraint, _l_fixed_nodes,
+        _l_tip_node, _l_compute_mass, _l_propose_params, _L_PARAM_BOUNDS,
+    )
+
+    bt_no_presizing = BracketType(
+        name="l_bracket_test",
+        display_name="L-bracket (no presizing)",
+        param_keys=("flange_width", "flange_height", "web_height", "thickness", "fillet_radius"),
+        defaults_mm={},
+        fillet_constraint=_l_fillet_constraint,
+        freecad_script_fn=_l_build_freecad_script,
+        fixed_nodes_fn=_l_fixed_nodes,
+        tip_node_fn=_l_tip_node,
+        mass_fn=_l_compute_mass,
+        optimizer=OptimizerStrategy(param_bounds=_L_PARAM_BOUNDS, propose_fn=_l_propose_params),
+        presizing_fn=None,
+    )
+    assert bt_no_presizing.presizing_fn is None

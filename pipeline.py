@@ -242,14 +242,18 @@ def _geo_params(all_params: dict, bracket_type=None) -> dict:
     return {k: all_params[k] for k in keys if k in all_params}
 
 
-def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
+def run(brief_text: str, max_iter: int = 10,
+        slim_after_pass: bool = False) -> tuple[dict, dict]:
     """
     Run the full bracket FEM optimization loop.
 
     Parameters
     ----------
-    brief_text : str — plain-text design brief
-    max_iter   : int — maximum iterations (default 10)
+    brief_text      : str  — plain-text design brief
+    max_iter        : int  — maximum iterations (default 10)
+    slim_after_pass : bool — if True, continue after first pass to reduce mass
+                             (Stage B mass descent); default False preserves
+                             stop-on-first-pass behaviour
 
     Returns
     -------
@@ -277,6 +281,16 @@ def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
         material["Sy_pa"] = 250e6
     rho   = material["rho"]
     Sy_pa = material["Sy_pa"]
+
+    # --- Analytical pre-sizing warm-start ---
+    if bracket_type.presizing_fn is not None:
+        pre_geo = bracket_type.presizing_fn(geo, loads, material, constraints)
+        logger.info(
+            "Analytical pre-sizing: %s → %s",
+            {k: round(geo[k] * 1e3, 1) for k in bracket_type.param_keys if k in geo},
+            {k: round(pre_geo[k] * 1e3, 1) for k in bracket_type.param_keys if k in pre_geo},
+        )
+        geo = pre_geo
 
     best_params = None
     best_eval   = None
@@ -372,12 +386,25 @@ def run(brief_text: str, max_iter: int = 10) -> tuple[dict, dict]:
             # 9. Check pass
             if eval_result["pass"]:
                 logger.info("All constraints satisfied at iteration %d.", iteration)
-                return best_params, best_eval
+                if not slim_after_pass or iteration == max_iter:
+                    return best_params, best_eval
+                # Stage B: try slimmer next step
+                new_geo = propose_params(
+                    best_params, [],   # empty violations → slim branch
+                    iteration, bracket_type=bracket_type,
+                    metrics=metrics, constraints=constraints,
+                )
+                if new_geo == best_params:
+                    logger.info("At mass minimum — stopping.")
+                    return best_params, best_eval
+                geo = new_geo
+                continue
 
             # 10. Stagnation detection
             new_geo = propose_params(
                 geo, eval_result["violations"], iteration,
                 bracket_type=bracket_type,
+                metrics=metrics, constraints=constraints,
             )
             if new_geo == geo:
                 logger.warning("Optimizer stagnated at iteration %d — stopping.", iteration)

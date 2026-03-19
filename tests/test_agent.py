@@ -134,10 +134,13 @@ class TestToolSchemas:
             if t["name"] == "run_pipeline":
                 assert "load_n" in t["input_schema"]["required"]
 
-    def test_modify_and_run_requires_changes(self):
+    def test_modify_and_run_changes_is_optional(self):
         for t in agent._anthropic_tools():
             if t["name"] == "modify_and_run":
-                assert "changes" in t["input_schema"]["required"]
+                schema = t["input_schema"]
+                assert "changes" not in schema.get("required", [])
+                assert "changes" in schema["properties"]
+                assert schema["properties"]["changes"]["type"] == "object"
 
 
 # ---------------------------------------------------------------------------
@@ -265,10 +268,49 @@ class TestModifyAndRunTool:
         result = agent_tools.modify_and_run_tool({"changes": {"load_n": 3000}})
         assert "error" in result
 
-    def test_error_when_changes_missing(self):
-        agent_tools._session_state["last_load_n"] = 2000
-        result = agent_tools.modify_and_run_tool({})
-        assert "error" in result
+    def _set_valid_session(self):
+        agent_tools._session_state.update({
+            "last_load_n": 2000,
+            "last_params_mm": {
+                "flange_width_mm": 80, "flange_height_mm": 60,
+                "web_height_mm": 100, "thickness_mm": 6.0, "fillet_radius_mm": 4.0,
+            },
+            "last_material": {"E_gpa": 200, "nu": 0.3, "rho": 7850, "Sy_mpa": 250},
+            "last_bracket_type_name": "l_bracket",
+        })
+
+    def _fake_run_return(self):
+        fake_params = {"flange_width": 0.08, "flange_height": 0.06,
+                       "web_height": 0.10, "thickness": 0.006, "fillet_radius": 0.004}
+        fake_eval = {"pass": True, "mass_kg": 0.5, "fos": 2.0,
+                     "stress_utilisation": 0.5, "violations": []}
+        return fake_params, fake_eval
+
+    def test_empty_changes_reruns_previous_design(self):
+        """Omitting changes should trigger a rerun, not return an error."""
+        self._set_valid_session()
+        fake_params, fake_eval = self._fake_run_return()
+        with patch("agent_tools.pipeline.run", return_value=(fake_params, fake_eval)) as mock_run, \
+             patch("agent_tools._count_iter_dirs", side_effect=[0, 1]), \
+             patch("agent_tools._last_iter_dir", return_value=None):
+            result = agent_tools.modify_and_run_tool({})  # no changes key at all
+        assert "error" not in result
+        assert mock_run.called
+        brief_used = mock_run.call_args[0][0]
+        params, _ = parse_brief(brief_used)
+        assert params["loads"]["magnitude_n"] == 2000.0
+        assert "l_bracket" in brief_used
+
+    def test_explicit_empty_changes_also_reruns(self):
+        """changes={} (explicit empty dict) also triggers rerun, not error."""
+        self._set_valid_session()
+        fake_params, fake_eval = self._fake_run_return()
+        with patch("agent_tools.pipeline.run", return_value=(fake_params, fake_eval)) as mock_run, \
+             patch("agent_tools._count_iter_dirs", side_effect=[0, 1]), \
+             patch("agent_tools._last_iter_dir", return_value=None):
+            result = agent_tools.modify_and_run_tool({"changes": {}})
+        assert "error" not in result
+        assert mock_run.called
 
     def test_merges_load_change(self):
         agent_tools._session_state.update({

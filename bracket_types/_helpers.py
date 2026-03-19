@@ -31,6 +31,41 @@ def _l_clamp(key: str, value: float) -> float:
 
 
 # ---------------------------------------------------------------------------
+# Physics-based scaling helper
+# ---------------------------------------------------------------------------
+
+def _physics_scale(actual: float, limit: float, exponent: int,
+                   iteration: int = 1) -> float:
+    """
+    Multiplier to apply to the controlling dimension so the scaled quantity
+    reaches the limit (per beam-theory scaling laws).
+
+    exponent=2 → bending stress (σ ∝ 1/h²)
+    exponent=3 → deflection    (δ ∝ 1/h³)
+
+    Clamp is iteration-aware:
+      upper_cap = max(1.10, 1.40 - 0.03*(iteration-1))
+      → iter 1: 1.40,  iter 5: 1.28,  iter 10: 1.13
+    Lower cap: 1.02 always (ensure progress when barely violated).
+
+    Returns 1.0 when not violated (actual ≤ limit).
+    Defensive: returns 1.0 for invalid inputs (limit ≤ 0, exponent ≤ 0,
+    NaN or inf in actual/limit).
+    """
+    if limit <= 0 or exponent <= 0:
+        return 1.0
+    if not math.isfinite(actual) or not math.isfinite(limit):
+        return 1.0
+    iteration = max(1, iteration)
+    if actual <= limit:
+        return 1.0
+    ratio     = actual / limit
+    raw       = ratio ** (1.0 / exponent)
+    upper_cap = max(1.10, 1.40 - 0.03 * (iteration - 1))
+    return max(1.02, min(upper_cap, raw))
+
+
+# ---------------------------------------------------------------------------
 # FreeCAD script builder (L-bracket)
 # ---------------------------------------------------------------------------
 
@@ -149,6 +184,19 @@ def _l_tip_node(nodes: dict, params: dict) -> int:
     return min(nodes.keys(), key=lambda nid: math.dist(nodes[nid], tip_target))
 
 
+def _l_load_patch(nodes: dict, params: dict, k: int = 5) -> list:
+    """Return k nearest node IDs to the L-bracket load application point."""
+    all_x = [xyz[0] for xyz in nodes.values()]
+    all_y = [xyz[1] for xyz in nodes.values()]
+    all_z = [xyz[2] for xyz in nodes.values()]
+    fw = params.get("flange_width",  max(all_x))
+    fh = params.get("flange_height", (max(all_y) + min(all_y)) / 2.0)
+    wh = params.get("web_height",    max(all_z))
+    t  = params.get("thickness",     (max(all_z) - min(all_z)) * 0.05)
+    target = (fw, fh / 2.0, wh - t / 2.0)
+    return sorted(nodes, key=lambda nid: math.dist(nodes[nid], target))[:k]
+
+
 # ---------------------------------------------------------------------------
 # Mass computation (L-bracket)
 # ---------------------------------------------------------------------------
@@ -178,35 +226,67 @@ def _l_fillet_constraint(params: dict) -> float:
 # Optimizer propose_params (L-bracket)
 # ---------------------------------------------------------------------------
 
-def _l_propose_params(current_params: dict, violations: list, iteration: int) -> dict:
+def _l_propose_params(current_params: dict, violations: list, iteration: int,
+                      metrics=None, constraints=None) -> dict:
     """
     Propose updated geometry parameters for the L-bracket next iteration.
 
     Strategy
     --------
-    - stress or fos violation  → thickness *= 1.10, fillet_radius *= 1.20
-    - displacement only        → web_height *= 1.10 (fallback: thickness *= 1.10)
+    - no violations (slim_after_pass)  → thickness *= 0.97 (mass descent)
+    - stress or fos violation  → thickness/fillet scaled by physics (exponent=2)
+    - displacement only        → web_height scaled by physics (exponent=3)
     - displacement + stress    → also web_height *= 1.05
     - mass only                → thickness *= 0.95
     - Clamp all to _L_PARAM_BOUNDS
     - fillet_radius <= thickness * 0.45 (always enforce)
+
+    metrics and constraints are optional — pass both for physics-aware scaling,
+    omit for legacy fixed-multiplier fallback.
     """
     params = dict(current_params)
+
+    # --- Stage B: no violations → slim for mass descent ---
+    if not violations:
+        new_t = params["thickness"] * 0.97
+        lo = _L_PARAM_BOUNDS["thickness"][0]
+        if new_t < lo:
+            return params   # at lower bound → stagnation signal
+        params["thickness"] = new_t
+        max_fr = params["thickness"] * 0.45
+        params["fillet_radius"] = min(params["fillet_radius"], max_fr)
+        return params
 
     has_stress = any(v.startswith("stress:") or v.startswith("fos:") for v in violations)
     has_disp   = any(v.startswith("displacement:") for v in violations)
     has_mass   = any(v.startswith("mass:") for v in violations)
 
     if has_stress:
-        params["thickness"]     = params["thickness"] * 1.10
-        params["fillet_radius"] = params["fillet_radius"] * 1.20
+        if metrics is not None and constraints is not None and "max_von_mises_pa" in metrics:
+            vm     = metrics["max_von_mises_pa"]
+            lim_vm = constraints.get("max_von_mises_pa", 250e6 / 1.5)
+            t_mult  = _physics_scale(vm, lim_vm, exponent=2, iteration=iteration)
+            fr_mult = _physics_scale(vm, lim_vm, exponent=2, iteration=iteration)
+        else:
+            t_mult, fr_mult = 1.10, 1.20     # legacy fallback
+
+        params["thickness"]     = params["thickness"] * t_mult
+        params["fillet_radius"] = params["fillet_radius"] * fr_mult
         if has_disp:
             params["web_height"] = params["web_height"] * 1.05
 
     elif has_disp:
-        new_wh = params["web_height"] * 1.10
+        if metrics is not None and constraints is not None and "max_displacement_m" in metrics:
+            disp    = metrics["max_displacement_m"]
+            lim_d   = constraints.get("max_displacement_m", 0.005)
+            wh_mult = _physics_scale(disp, lim_d, exponent=3, iteration=iteration)
+        else:
+            wh_mult = 1.10                   # legacy fallback
+
+        new_wh = params["web_height"] * wh_mult
         if new_wh > _L_PARAM_BOUNDS["web_height"][1]:
-            params["thickness"] = params["thickness"] * 1.10
+            # Redirect excess to thickness when wh would hit bound
+            params["thickness"] = params["thickness"] * (1.0 + (wh_mult - 1.0))
         else:
             params["web_height"] = new_wh
 

@@ -129,9 +129,24 @@ def write_inp(
         )
     logger.debug("Fixed nodes (%s): %d", bracket_type.name, len(fixed_nodes))
 
-    # 4. Identify TIP node via bracket_type
-    tip_node = bracket_type.tip_node_fn(nodes, params)
-    logger.debug("Tip node %d at %s", tip_node, nodes[tip_node])
+    # 4. Identify load application nodes via load_patch_fn or tip_node_fn fallback
+    if bracket_type.load_patch_fn is not None:
+        k = max(1, min(loads.get("load_patch_k", 5), len(nodes)))
+        raw = bracket_type.load_patch_fn(nodes, params, k)
+        # Deduplicate preserving order, drop IDs not in mesh
+        seen: set = set()
+        tip_nodes = [
+            n for n in (raw or [])
+            if n in nodes and not (n in seen or seen.add(n))
+        ]
+    else:
+        tip_nodes = [bracket_type.tip_node_fn(nodes, params)]
+
+    if not tip_nodes:
+        single = bracket_type.tip_node_fn(nodes, params)
+        tip_nodes = [single] if single in nodes else [next(iter(nodes))]
+
+    logger.debug("Load patch nodes (%s): %d", bracket_type.name, len(tip_nodes))
 
     # 5. Determine load DOF and sign
     direction = loads.get("direction", "-Z").upper().strip()
@@ -139,7 +154,7 @@ def write_inp(
     dof_map = {"X": 1, "Y": 2, "Z": 3, "-X": 1, "-Y": 2, "-Z": 3}
     load_dof = dof_map.get(direction, 3)
     load_sign = -1.0 if direction.startswith("-") else 1.0
-    load_value = load_sign * magnitude
+    force_per_node = load_sign * magnitude / len(tip_nodes)
 
     E_pa  = material["E_pa"]
     nu    = material["nu"]
@@ -195,7 +210,8 @@ def write_inp(
         lines.append(", ".join(str(n) for n in chunk))
 
     lines.append("*NSET, NSET=TIP")
-    lines.append(str(tip_node))
+    for i in range(0, len(tip_nodes), 16):
+        lines.append(", ".join(str(n) for n in tip_nodes[i:i + 16]) + ",")
 
     # --- Material ---
     lines.append("*MATERIAL, NAME=STEEL")
@@ -213,7 +229,8 @@ def write_inp(
     lines.append("FIXED, 1, 6")
 
     lines.append("*CLOAD")
-    lines.append(f"TIP, {load_dof}, {load_value:.6e}")
+    for nid in tip_nodes:
+        lines.append(f"{nid}, {load_dof}, {force_per_node:.6e}")
 
     lines.append("*NODE PRINT, NSET=NALL")
     lines.append("U")

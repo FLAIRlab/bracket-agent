@@ -23,8 +23,8 @@ from bracket_types._helpers import (
     _L_PARAM_BOUNDS,
 )
 from bracket_types.l_bracket import L_BRACKET
-from bracket_types.t_bracket import T_BRACKET, _t_compute_mass, _t_fixed_nodes, _t_tip_node
-from bracket_types.u_bracket import U_BRACKET, _u_compute_mass, _u_fixed_nodes, _u_tip_node
+from bracket_types.t_bracket import T_BRACKET, _t_compute_mass, _t_fixed_nodes, _t_tip_node, _t_load_patch
+from bracket_types.u_bracket import U_BRACKET, _u_compute_mass, _u_fixed_nodes, _u_tip_node, _u_load_patch
 from constraints import CONSTRAINTS, evaluate_constraints, _compute_mass
 from optimizer import propose_params, PARAM_BOUNDS
 from pipeline import parse_brief
@@ -412,6 +412,49 @@ class TestTipNodeDetection:
         tip = _u_tip_node(nodes, {})
         # y-span of _make_nodes_u() is 0..0.06 → span=0.06 → target y=0.03
         assert abs(nodes[tip][1] - 0.03) < 0.01
+
+    def test_l_load_patch_validity(self):
+        from bracket_types._helpers import _l_load_patch
+        nodes = _make_nodes_l()
+        params = {"flange_width": 0.08, "flange_height": 0.06,
+                  "web_height": 0.10, "thickness": 0.006}
+        patch = _l_load_patch(nodes, params, k=5)
+        assert len(patch) == 5
+        assert all(nid in nodes for nid in patch)
+        assert len(set(patch)) == 5  # no duplicates
+
+    def test_t_load_patch_validity(self):
+        nodes = _make_nodes_t()
+        params = {"flange_width": 0.12, "flange_height": 0.06,
+                  "web_height": 0.10, "thickness": 0.006}
+        patch = _t_load_patch(nodes, params, k=5)
+        assert len(patch) == 5
+        assert all(nid in nodes for nid in patch)
+        assert len(set(patch)) == 5  # no duplicates
+
+    def test_u_load_patch_validity(self):
+        nodes = _make_nodes_u()
+        params = {"channel_depth": 0.06, "wall_height": 0.10}
+        patch = _u_load_patch(nodes, params, k=5)
+        assert len(patch) == 5
+        assert all(nid in nodes for nid in patch)
+        assert len(set(patch)) == 5  # no duplicates
+
+    def test_load_patch_fn_registered_on_all_types(self):
+        """All built-in bracket types must have a callable load_patch_fn."""
+        for name, bt in REGISTRY.items():
+            assert callable(bt.load_patch_fn), \
+                f"{name}.load_patch_fn is not callable"
+
+    def test_load_patch_k1_returns_same_as_tip_node(self):
+        """load_patch_fn with k=1 returns the same node as tip_node_fn."""
+        from bracket_types._helpers import _l_load_patch
+        nodes = _make_nodes_l()
+        params = {"flange_width": 0.08, "flange_height": 0.06,
+                  "web_height": 0.10, "thickness": 0.006}
+        patch = _l_load_patch(nodes, params, k=1)
+        tip = L_BRACKET.tip_node_fn(nodes, params)
+        assert patch == [tip]
 
 
 # =============================================================================

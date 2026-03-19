@@ -11,10 +11,12 @@ from bracket_types._helpers import (
     _l_fillet_constraint,
     _l_fixed_nodes,
     _l_tip_node,
+    _l_load_patch,
     _l_compute_mass,
     _l_propose_params,
     _L_PARAM_BOUNDS,
 )
+from tools.presizing import l_presizing
 
 L_BRACKET = BracketType(
     name="l_bracket",
@@ -42,6 +44,8 @@ L_BRACKET = BracketType(
         param_bounds=_L_PARAM_BOUNDS,
         propose_fn=_l_propose_params,
     ),
+    presizing_fn=l_presizing,
+    load_patch_fn=_l_load_patch,
 )
 
 REGISTRY["l_bracket"] = L_BRACKET

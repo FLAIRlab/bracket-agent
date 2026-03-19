@@ -16,7 +16,7 @@ PARAM_BOUNDS = _L_PARAM_BOUNDS
 
 
 def propose_params(current_params: dict, violations: list, iteration: int,
-                   bracket_type=None) -> dict:
+                   bracket_type=None, metrics=None, constraints=None) -> dict:
     """
     Propose updated geometry parameters for the next iteration.
 
@@ -26,11 +26,17 @@ def propose_params(current_params: dict, violations: list, iteration: int,
     violations     : list[str] — violation strings with prefixes
     iteration      : int — current iteration number
     bracket_type   : BracketType | None — if None, uses L-bracket strategy
+    metrics        : dict | None — FEM result metrics for physics-aware scaling
+    constraints    : dict | None — constraint limits for physics-aware scaling
 
     Returns
     -------
     dict — updated geometry params
     """
     if bracket_type is not None:
-        return bracket_type.optimizer.propose_fn(current_params, violations, iteration)
-    return _l_propose_params(current_params, violations, iteration)
+        return bracket_type.optimizer.propose_fn(
+            current_params, violations, iteration,
+            metrics=metrics, constraints=constraints,
+        )
+    return _l_propose_params(current_params, violations, iteration,
+                             metrics=metrics, constraints=constraints)

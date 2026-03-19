@@ -26,6 +26,8 @@ import textwrap
 from pathlib import Path
 
 from bracket_types import REGISTRY, BracketType, OptimizerStrategy
+from bracket_types._helpers import _physics_scale
+from tools.presizing import u_presizing
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +164,16 @@ def _u_tip_node(nodes: dict, params: dict) -> int:
     return min(nodes.keys(), key=lambda nid: math.dist(nodes[nid], tip_target))
 
 
+def _u_load_patch(nodes: dict, params: dict, k: int = 5) -> list:
+    """Return k nearest node IDs to the U-bracket load application point."""
+    all_z = [xyz[2] for xyz in nodes.values()]
+    all_y = [xyz[1] for xyz in nodes.values()]
+    cd = params.get("channel_depth", max(all_y) - min(all_y))
+    wh = params.get("wall_height",   max(all_z))
+    target = (0.0, cd / 2.0, wh)
+    return sorted(nodes, key=lambda nid: math.dist(nodes[nid], target))[:k]
+
+
 # ---------------------------------------------------------------------------
 # Mass computation (U-bracket)
 # ---------------------------------------------------------------------------
@@ -197,31 +209,62 @@ def _u_fillet_constraint(params: dict) -> float:
 # Optimizer (U-bracket) — displacement drives wall_height increase
 # ---------------------------------------------------------------------------
 
-def _u_propose_params(current_params: dict, violations: list, iteration: int) -> dict:
+def _u_propose_params(current_params: dict, violations: list, iteration: int,
+                      metrics=None, constraints=None) -> dict:
     """
     U-bracket optimization strategy.
 
-    - stress / fos violation → thickness *= 1.10, fillet_radius *= 1.20
-    - displacement only      → wall_height *= 1.10 (fallback: thickness *= 1.10)
+    - no violations (slim_after_pass)  → thickness *= 0.97 (mass descent)
+    - stress / fos violation → thickness/fillet scaled by physics (exponent=2)
+    - displacement only      → wall_height scaled by physics (exponent=3)
     - displacement + stress  → also wall_height *= 1.05
     - mass only              → thickness *= 0.95
+
+    metrics and constraints are optional — pass both for physics-aware scaling,
+    omit for legacy fixed-multiplier fallback.
     """
     params = dict(current_params)
+
+    # --- Stage B: no violations → slim for mass descent ---
+    if not violations:
+        new_t = params["thickness"] * 0.97
+        lo = _U_PARAM_BOUNDS["thickness"][0]
+        if new_t < lo:
+            return params   # at lower bound → stagnation signal
+        params["thickness"] = new_t
+        max_fr = params["thickness"] * 0.45
+        params["fillet_radius"] = min(params["fillet_radius"], max_fr)
+        return params
 
     has_stress = any(v.startswith("stress:") or v.startswith("fos:") for v in violations)
     has_disp   = any(v.startswith("displacement:") for v in violations)
     has_mass   = any(v.startswith("mass:") for v in violations)
 
     if has_stress:
-        params["thickness"]     = params["thickness"] * 1.10
-        params["fillet_radius"] = params["fillet_radius"] * 1.20
+        if metrics is not None and constraints is not None and "max_von_mises_pa" in metrics:
+            vm     = metrics["max_von_mises_pa"]
+            lim_vm = constraints.get("max_von_mises_pa", 250e6 / 1.5)
+            t_mult  = _physics_scale(vm, lim_vm, exponent=2, iteration=iteration)
+            fr_mult = _physics_scale(vm, lim_vm, exponent=2, iteration=iteration)
+        else:
+            t_mult, fr_mult = 1.10, 1.20     # legacy fallback
+
+        params["thickness"]     = params["thickness"] * t_mult
+        params["fillet_radius"] = params["fillet_radius"] * fr_mult
         if has_disp:
             params["wall_height"] = params["wall_height"] * 1.05
 
     elif has_disp:
-        new_wh = params["wall_height"] * 1.10
+        if metrics is not None and constraints is not None and "max_displacement_m" in metrics:
+            disp    = metrics["max_displacement_m"]
+            lim_d   = constraints.get("max_displacement_m", 0.005)
+            wh_mult = _physics_scale(disp, lim_d, exponent=3, iteration=iteration)
+        else:
+            wh_mult = 1.10                   # legacy fallback
+
+        new_wh = params["wall_height"] * wh_mult
         if new_wh > _U_PARAM_BOUNDS["wall_height"][1]:
-            params["thickness"] = params["thickness"] * 1.10
+            params["thickness"] = params["thickness"] * (1.0 + (wh_mult - 1.0))
         else:
             params["wall_height"] = new_wh
 
@@ -269,6 +312,8 @@ U_BRACKET = BracketType(
         param_bounds=_U_PARAM_BOUNDS,
         propose_fn=_u_propose_params,
     ),
+    presizing_fn=u_presizing,
+    load_patch_fn=_u_load_patch,
 )
 
 REGISTRY["u_bracket"] = U_BRACKET
