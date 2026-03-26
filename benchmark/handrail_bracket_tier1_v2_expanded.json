@@ -1,0 +1,154 @@
+{
+  "benchmark_name": "handrail_bracket_tier1_v2_expanded_from_catalog_patterns",
+  "description": "Expanded Tier 1 static handrail bracket benchmark informed by catalog-visible industrial patterns such as screw vs weld-on mounting, flat vs round handrail support, inline vs offset rail type, countersunk vs straight mounting holes, and cast vs formed fabrication.",
+  "catalog_informed_updates": [
+    "Added explicit benchmark coverage for flat-handrail support.",
+    "Added explicit benchmark coverage for weld-on support brackets for metal railing fabrication.",
+    "Added explicit benchmark coverage for inline and offset support layouts.",
+    "Added explicit benchmark coverage for countersunk and straight mounting-hole styles.",
+    "Added projection targets within a realistic catalog-inspired range near 57 to 83 mm."
+  ],
+  "global_conventions": {
+    "coordinate_system": {
+      "x": "along wall and along handrail axis",
+      "y": "outward normal from mounting surface toward handrail",
+      "z": "vertical upward"
+    },
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "density": "kg/m^3",
+      "elastic_modulus": "GPa"
+    },
+    "submission_requirements": {
+      "design_scope": "bracket only",
+      "allowed_output": [
+        "STEP",
+        "parametric CAD script",
+        "watertight mesh"
+      ],
+      "material_assignment": "must use task-specified material",
+      "assembly_scope": "single bracket body unless task explicitly allows multi-part welded assembly"
+    },
+    "evaluation_method": {
+      "objective": "minimize bracket mass",
+      "constraints_policy": "all load cases must satisfy all constraints",
+      "stress_metric": "von Mises stress",
+      "displacement_metric": "maximum displacement magnitude at rail interface",
+      "linear_static_analysis": true,
+      "small_deformation_assumption": true
+    }
+  },
+  "tasks": [
+    {
+      "id": "HR-T1-01",
+      "name": "Residential round-handrail screw-mount bracket",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "formed"
+      ],
+      "design_requirements_nl": "Design a wall-mounted bracket for a residential stair handrail. The bracket must support a 38 mm diameter round handrail whose centerline is located 75 mm outward from the wall. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 120 mm in x, 80 mm in y, and 80 mm in z, with the mounting wall located at y = 0 and the rail center at (0, 75, 0) mm. The wall-side interface consists of two 5.5 mm diameter fastener holes located at (0, 0, -25) mm and (0, 0, 25) mm, representing attachment to a wood stud. The handrail interface is a saddle attachment for the round rail using a 120 degree saddle band with 20 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 900 N downward in the negative z direction, 900 N outward from the wall in the positive y direction, 900 N along the rail axis in the positive x direction, and 900 N upward in the positive z direction. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume stamped-plus-welded manufacturing with at most 2 parts, minimum sheet thickness 4 mm, minimum bend radius 4 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 2.0 mm and maximum von Mises stress below 100.0 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      }
+    },
+    {
+      "id": "HR-T1-02",
+      "name": "Commercial round-handrail cast bracket",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "cast",
+        "straight_holes"
+      ],
+      "design_requirements_nl": "Design a wall-mounted bracket for a high-traffic commercial stair handrail. The bracket must support a 42 mm diameter round handrail whose centerline is located 90 mm outward from a concrete wall. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 150 mm in x, 100 mm in y, and 100 mm in z, with the mounting wall located at y = 0 and the rail center at (0, 90, 0) mm. The wall-side interface consists of three 9.0 mm diameter anchor holes located at (0, 0, -35) mm, (0, 0, 0) mm, and (0, 0, 35) mm. The handrail interface is a saddle attachment for the round rail using a 120 degree saddle band with 24 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 1330 N downward in the negative z direction, 1330 N outward from the wall in the positive y direction, 1330 N along the rail axis in the positive x direction, and 1330 N upward in the positive z direction. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume cast-plus-machined manufacturing as a single-body part with minimum wall thickness 5 mm, minimum internal radius 3 mm, and straight mounting holes. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.5 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      }
+    },
+    {
+      "id": "HR-T1-03",
+      "name": "Outdoor round-handrail cast bracket",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "cast"
+      ],
+      "design_requirements_nl": "Design a wall-mounted bracket for an outdoor stair handrail exposed to weather. The bracket must support a 40 mm diameter round handrail whose centerline is located 80 mm outward from a concrete wall. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 140 mm in x, 95 mm in y, and 95 mm in z, with the mounting wall located at y = 0 and the rail center at (0, 80, 0) mm. The wall-side interface consists of three 9.0 mm diameter anchor holes located at (0, 0, -30) mm, (0, 0, 0) mm, and (0, 0, 30) mm. The handrail interface is a saddle attachment for the round rail using a 120 degree saddle band with 22 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 1000 N downward in the negative z direction, 1000 N outward from the wall in the positive y direction, 1000 N along the rail axis in the positive x direction, and 1000 N upward in the positive z direction. Use stainless steel 316 with elastic modulus 193 GPa, Poisson ratio 0.30, yield strength 205 MPa, and density 8000 kg/m^3. Assume cast manufacturing as a single-body part with minimum wall thickness 5 mm, minimum internal radius 3 mm, and required draft angle of 2 degrees. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.8 mm and maximum von Mises stress below 68.3 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      }
+    },
+    {
+      "id": "HR-T1-04",
+      "name": "Industrial round-handrail welded bracket",
+      "catalog_alignment": [
+        "weld_on",
+        "round_handrail",
+        "offset",
+        "welded"
+      ],
+      "design_requirements_nl": "Design a heavy-duty bracket for an industrial safety handrail mounted to a steel beam. The bracket must support a 48 mm diameter round handrail whose centerline is located 100 mm outward from the mounting surface. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the mounting surface toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 180 mm in x, 120 mm in y, and 120 mm in z, with the mounting surface located at y = 0 and the rail center at (0, 100, 0) mm. The wall-side interface consists of four 11.0 mm diameter bolt holes located at (-25, 0, -35) mm, (25, 0, -35) mm, (-25, 0, 35) mm, and (25, 0, 35) mm. The handrail interface is a saddle attachment for the round rail using a 120 degree saddle band with 28 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 1500 N downward in the negative z direction, 1500 N outward from the mounting surface in the positive y direction, 1500 N along the rail axis in the positive x direction, and 1500 N upward in the positive z direction. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume welded fabrication with at most 3 parts, minimum plate thickness 6 mm, minimum weld leg size 5 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 2.0 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      }
+    },
+    {
+      "id": "HR-T1-05",
+      "name": "Flat-handrail countersunk residential bracket",
+      "catalog_alignment": [
+        "screw_mount",
+        "flat_handrail",
+        "formed",
+        "countersunk_holes"
+      ],
+      "design_requirements_nl": "Design a wall-mounted bracket for a flat-bottom residential handrail. The supported handrail contact surface is flat and 50 mm wide, and the handrail reference plane is located 65 mm outward from the wall. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 120 mm in x, 70 mm in y, and 80 mm in z, with the mounting wall located at y = 0 and the rail reference plane centered at (0, 65, 0) mm. The wall-side interface consists of two countersunk 5.5 mm diameter screw holes located at (0, 0, -24) mm and (0, 0, 24) mm. The handrail interface is a flat support pad measuring 50 mm by 20 mm. The bracket must withstand four static load cases applied at the handrail interface: 800 N downward in the negative z direction, 800 N outward from the wall in the positive y direction, 800 N along the rail axis in the positive x direction, and 800 N upward in the positive z direction. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume formed-sheet manufacturing with a single body, minimum sheet thickness 4 mm, minimum bend radius 4 mm, and flush countersunk fastener seating. The objective is to minimize bracket mass while keeping maximum displacement at the handrail interface below 1.8 mm and maximum von Mises stress below 100.0 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      }
+    },
+    {
+      "id": "HR-T1-06",
+      "name": "Round-handrail inline support bracket",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "inline",
+        "formed"
+      ],
+      "design_requirements_nl": "Design an inline wall-mounted support bracket for a round handrail. The bracket must support a 42 mm diameter round handrail whose centerline is located 70 mm outward from the wall, and the support geometry must remain centered beneath the rail so that the main structural load path lies in the x = 0 plane. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 110 mm in x, 70 mm in y, and 85 mm in z, with the mounting wall located at y = 0 and the rail center at (0, 70, 0) mm. The wall-side interface consists of three straight 6.6 mm diameter screw holes located at (0, 0, -28) mm, (0, 0, 0) mm, and (0, 0, 28) mm. The handrail interface is a 120 degree saddle band with 22 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 950 N downward in the negative z direction, 950 N outward from the wall in the positive y direction, 950 N along the rail axis in the positive x direction, and 950 N upward in the positive z direction. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume formed manufacturing with a single body, minimum thickness 5 mm, and straight mounting holes. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.6 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      }
+    },
+    {
+      "id": "HR-T1-07",
+      "name": "Round-handrail offset support bracket",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "offset",
+        "cast_or_formed"
+      ],
+      "design_requirements_nl": "Design an offset wall-mounted support bracket for a round handrail. The bracket must support a 42 mm diameter round handrail whose centerline is located 83 mm outward from the wall, and the support stem may be laterally offset so that the rail saddle does not lie directly over the wall fastener centerline. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 130 mm in x, 83 mm in y, and 90 mm in z, with the mounting wall located at y = 0 and the rail center at (18, 83, 0) mm. The wall-side interface consists of two straight 6.6 mm diameter screw holes located at (0, 0, -24) mm and (0, 0, 24) mm. The handrail interface is a 120 degree saddle band with 22 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 950 N downward in the negative z direction, 950 N outward from the wall in the positive y direction, 950 N along the rail axis in the positive x direction, and 950 N upward in the positive z direction. Use zinc-plated steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume either formed or cast manufacturing as a single-body part, minimum thickness 4.5 mm, and straight mounting holes. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.8 mm and maximum von Mises stress below 100.0 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      }
+    },
+    {
+      "id": "HR-T1-08",
+      "name": "Weld-on metal-railing support saddle",
+      "catalog_alignment": [
+        "weld_on",
+        "round_handrail",
+        "support_component"
+      ],
+      "design_requirements_nl": "Design a weld-on support bracket intended for fabrication into a metal railing assembly rather than screw attachment to a wall. The bracket must support a 50 mm diameter round handrail whose centerline is located 76 mm outward from the weld reference plane. Use a coordinate system in which x is along the weld reference plane and along the handrail axis, y is outward from the weld reference plane toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 120 mm in x, 76 mm in y, and 90 mm in z, with the weld reference plane located at y = 0 and the rail center at (0, 76, 0) mm. The mounting interface is a rectangular weld pad measuring 40 mm by 70 mm centered on the plane y = 0. The handrail interface is a 120 degree saddle band with 26 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 1200 N downward in the negative z direction, 1200 N outward from the weld plane in the positive y direction, 1200 N along the rail axis in the positive x direction, and 1200 N upward in the positive z direction. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume welded fabrication with a single body, minimum plate thickness 6 mm, minimum weld leg size 5 mm, and no mechanical fastener holes. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.7 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      }
+    }
+  ]
+}

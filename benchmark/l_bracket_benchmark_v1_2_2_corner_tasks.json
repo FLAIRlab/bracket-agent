@@ -1,0 +1,887 @@
+{
+  "benchmark_name": "l_bracket_benchmark_v1_2_2_corner_tasks",
+  "benchmark_version": "1.2.2",
+  "description": "Corner-bracket realism expansion for the L-bracket benchmark with clarified load-interface axis conventions, explicit slot edge-distance intent, and explicit wraparound occupancy treatment.",
+  "extends_benchmark": "l_bracket_tier1_v1_1",
+  "group_definition": {
+    "group_E": "Corner-bracket realism"
+  },
+  "global_conventions": {
+    "coordinate_system": {
+      "x": "primary depth direction measured outward from the corner bisector or mounting reference as defined per task",
+      "y": "horizontal lateral direction",
+      "z": "vertical upward"
+    },
+    "coordinate_system_note": "For Group E tasks, explicit envelope_ranges_mm and interface coordinates are the source of truth. The coordinate frame is task-specific but always expressed in the same global x/y/z format.",
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "density": "kg/m^3",
+      "elastic_modulus": "GPa"
+    },
+    "submission_requirements": {
+      "design_scope": "bracket only",
+      "allowed_output": [
+        "STEP",
+        "parametric CAD script",
+        "watertight mesh"
+      ],
+      "material_assignment": "must use task-specified material",
+      "assembly_scope": "single bracket body unless task explicitly allows multi-part welded assembly"
+    },
+    "evaluation_method": {
+      "objective": "minimize bracket mass",
+      "constraints_policy": "all load cases must satisfy all constraints",
+      "stress_metric": "von Mises stress",
+      "displacement_metric": "maximum displacement magnitude at load interface",
+      "linear_static_analysis": true,
+      "small_deformation_assumption": true,
+      "mass_definition": "Bracket-body mass only. Fasteners and mating components are excluded."
+    },
+    "envelope_scope": {
+      "scope": "bracket_body_only",
+      "definition": "The task envelope constrains only the bracket geometry. The supporting walls, frames, or attached components are excluded from the envelope."
+    },
+    "load_application_rule": {
+      "method": "distributed_over_load_interface",
+      "definition": "Each load case is applied as a distributed load over the specified load interface patch.",
+      "resultant_passes_through": "load_interface_reference_center"
+    },
+    "minimum_edge_distance_definition": {
+      "quantity": "hole_center_to_nearest_free_edge",
+      "definition": "minimum_edge_distance_mm is the minimum Euclidean distance from the center of any mounting hole to the nearest free edge of the bracket body."
+    },
+    "product_family_schema": {
+      "product_family": {
+        "catalog_track": "core_mechanics | corner_bracket",
+        "subtype": "inside_corner | outside_corner | wraparound | surface_corner"
+      },
+      "mating_system": {
+        "type": "flat_plane | inside_corner | outside_corner",
+        "standard_size": null,
+        "alignment_feature_required": false
+      },
+      "feature_requirements": {
+        "slotted_holes_allowed": false,
+        "slotted_holes_required": false,
+        "wraparound_required": false,
+        "concealed_profile_required": false
+      }
+    },
+    "evaluation_mesh_specification_template": {
+      "element_type": "second_order_tetrahedral_or_equivalent",
+      "global_target_element_size_mm": 2.0,
+      "local_refinement_regions": [
+        "mounting holes",
+        "internal fillets",
+        "slot ends",
+        "corner wraparound transitions"
+      ],
+      "local_target_element_size_mm": 0.5,
+      "stress_extraction_rule": "Report peak von Mises stress away from immediate singular boundary-condition artifacts."
+    },
+    "load_interface_placement_rationale": {
+      "definition": "For corner-bracket tasks, the primary load interface should lie on or immediately adjacent to one bracket leg or one reinforced face, rather than at a purely diagonal point in free space, unless a task explicitly states a diagonal bridging interface for a justified use case."
+    },
+    "slot_boundary_condition_rule": {
+      "definition": "For slot-based mounting tasks in v1.2.1, the entire explicit slot surface is constrained in translation for reproducibility. Bearing-direction-dependent contact is intentionally not modeled at this stage."
+    },
+    "wraparound_compliance_rule": {
+      "definition": "Wraparound compliance is checked geometrically by evaluating occupancy within the specified wraparound region on evenly spaced z-slices. A slice counts as occupied if bracket material covers at least the stated minimum fraction of the region area on that slice."
+    },
+    "load_interface_dimension_axis_rule": {
+      "definition": "The size_mm keys for a load_interface refer to the global coordinate axes that lie in the plane of that specific load interface. Therefore different tasks may use different axis pairs, such as {y, z}, {x, z}, or {x, y}, depending on the orientation of the load pad."
+    },
+    "wraparound_occupancy_material_rule": {
+      "definition": "Wraparound occupancy is computed using actual remaining bracket material on each evaluation slice. Holes, slots, voids, pockets, and cutouts reduce occupied area and are not ignored in the occupancy calculation."
+    },
+    "slot_edge_distance_rule": {
+      "definition": "If a task explicitly states that minimum_edge_distance_mm for a slot is measured from the slot centroid, that centroid-based rule is intentional and takes precedence over perimeter-based interpretations."
+    }
+  },
+  "tasks": [
+    {
+      "id": "E-T1-01",
+      "name": "Inside-corner bracket, round holes",
+      "group": "E",
+      "category": "static_structural",
+      "product_family": {
+        "catalog_track": "corner_bracket",
+        "subtype": "inside_corner"
+      },
+      "mating_system": {
+        "type": "inside_corner",
+        "standard_size": null,
+        "alignment_feature_required": false
+      },
+      "feature_requirements": {
+        "slotted_holes_allowed": false,
+        "slotted_holes_required": false,
+        "wraparound_required": false,
+        "concealed_profile_required": false
+      },
+      "design_requirements_nl": "Design an inside-corner reinforcement bracket for joining two perpendicular mounting surfaces at an internal 90 degree corner. The bracket is mounted across the corner and attaches to both intersecting planes. Use a coordinate system in which the corner line is parallel to z, the two mounting planes are x = 0 and y = 0, and the bracket occupies the positive-x positive-y region near the corner. The bracket body must fit inside an axis-aligned bounding box with x in [0, 70] mm, y in [0, 70] mm, and z in [-45, 45] mm. The mounting interfaces are two perpendicular planes meeting at the corner. The x = 0 plane contains two 6.6 mm diameter mounting holes centered at (0, 18, -22) mm and (0, 18, 22) mm. The y = 0 plane contains two 6.6 mm diameter mounting holes centered at (18, 0, -22) mm and (18, 0, 22) mm. The primary load interface is a flat rectangular pad located on the x-dominant leg region, centered at (52, 10, 0) mm with size 22 mm in x by 20 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1200 N downward in negative z, 1200 N upward in positive z, 700 N in positive x, and 500 N in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume machined single-body manufacturing with minimum thickness 5 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 1.0 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            70
+          ],
+          "y": [
+            0,
+            70
+          ],
+          "z": [
+            -45,
+            45
+          ]
+        },
+        "mounting_planes": [
+          {
+            "x_mm": 0
+          },
+          {
+            "y_mm": 0
+          }
+        ],
+        "corner_type": "inside_corner",
+        "corner_angle_deg": 90,
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 5
+      },
+      "interfaces": {
+        "mounting_plane_x0": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": 22
+              }
+            ]
+          }
+        },
+        "mounting_plane_y0": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 18,
+                "y": 0,
+                "z": -22
+              },
+              {
+                "x": 18,
+                "y": 0,
+                "z": 22
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 52,
+            "y": 10,
+            "z": 0
+          },
+          "size_mm": {
+            "x": 22,
+            "z": 20
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1200
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1200
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Primary outward load",
+          "force_vector_N": {
+            "x": 700,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 500,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 5,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.0,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces on both mounting planes",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.2.2",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.2.1. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Quick baseline CAD/FEA feasibility check should be attached in a future revision."
+      }
+    },
+    {
+      "id": "E-T1-02",
+      "name": "Outside-corner bracket",
+      "group": "E",
+      "category": "static_structural",
+      "product_family": {
+        "catalog_track": "corner_bracket",
+        "subtype": "outside_corner"
+      },
+      "mating_system": {
+        "type": "outside_corner",
+        "standard_size": null,
+        "alignment_feature_required": false
+      },
+      "feature_requirements": {
+        "slotted_holes_allowed": false,
+        "slotted_holes_required": false,
+        "wraparound_required": false,
+        "concealed_profile_required": false
+      },
+      "design_requirements_nl": "Design an outside-corner bracket for reinforcing an external 90 degree corner. The bracket attaches across two perpendicular exterior faces and must bridge the outside of the corner. Use a coordinate system in which the corner line is parallel to z, the two reference mounting planes are x = 0 and y = 0, and the bracket body occupies the negative-x negative-y region outside the corner. The bracket body must fit inside an axis-aligned bounding box with x in [-75, 0] mm, y in [-75, 0] mm, and z in [-45, 45] mm. The x = 0 plane contains two 6.6 mm diameter mounting holes centered at (0, -20, -24) mm and (0, -20, 24) mm. The y = 0 plane contains two 6.6 mm diameter mounting holes centered at (-20, 0, -24) mm and (-20, 0, 24) mm. The primary load interface is a flat rectangular pad located on the x-side leg region, centered at (-56, -10, 0) mm with size 22 mm in x by 20 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1300 N downward in negative z, 1300 N upward in positive z, 750 N in negative x, and 550 N in negative y. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume machined single-body manufacturing with minimum thickness 5 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.9 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            -75,
+            0
+          ],
+          "y": [
+            -75,
+            0
+          ],
+          "z": [
+            -45,
+            45
+          ]
+        },
+        "mounting_planes": [
+          {
+            "x_mm": 0
+          },
+          {
+            "y_mm": 0
+          }
+        ],
+        "corner_type": "outside_corner",
+        "corner_angle_deg": 90,
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 5
+      },
+      "interfaces": {
+        "mounting_plane_x0": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -20,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": -20,
+                "z": 24
+              }
+            ]
+          }
+        },
+        "mounting_plane_y0": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": -20,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": -20,
+                "y": 0,
+                "z": 24
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": -56,
+            "y": -10,
+            "z": 0
+          },
+          "size_mm": {
+            "x": 22,
+            "z": 20
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1300
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1300
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Primary outward load on x-side",
+          "force_vector_N": {
+            "x": -750,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load on y-side",
+          "force_vector_N": {
+            "x": 0,
+            "y": -550,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 5,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.9,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces on both mounting planes",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.2.2",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.2.1. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Quick baseline CAD/FEA feasibility check should be attached in a future revision."
+      }
+    },
+    {
+      "id": "E-T1-03",
+      "name": "Wraparound corner bracket",
+      "group": "E",
+      "category": "static_structural",
+      "product_family": {
+        "catalog_track": "corner_bracket",
+        "subtype": "wraparound"
+      },
+      "mating_system": {
+        "type": "inside_corner",
+        "standard_size": null,
+        "alignment_feature_required": true
+      },
+      "feature_requirements": {
+        "slotted_holes_allowed": false,
+        "slotted_holes_required": false,
+        "wraparound_required": true,
+        "concealed_profile_required": false
+      },
+      "design_requirements_nl": "Design a wraparound corner bracket for reinforcing an internal 90 degree corner. The bracket must engage both mounting planes and also include a wraparound geometry that extends around the corner region to increase connection stiffness. Use a coordinate system in which the corner line is parallel to z, the mounting planes are x = 0 and y = 0, and the bracket body occupies the positive-x positive-y region near the corner. The bracket body must fit inside an axis-aligned bounding box with x in [0, 85] mm, y in [0, 85] mm, and z in [-50, 50] mm. The wraparound feature is a geometric requirement: the bracket must include material in the region x in [0, 12] mm and y in [0, 12] mm. Wraparound compliance is checked on 10 evenly spaced z-slices across the full z span. A slice counts as compliant if actual remaining bracket material occupies at least 50 percent of the rectangular wraparound region area on that slice; holes, slots, voids, pockets, and cutouts reduce the occupied area and are not ignored. At least 7 of the 10 slices must be compliant. The x = 0 plane contains two 8.5 mm diameter mounting holes centered at (0, 22, -26) mm and (0, 22, 26) mm. The y = 0 plane contains two 8.5 mm diameter mounting holes centered at (22, 0, -26) mm and (22, 0, 26) mm. The primary load interface is a flat rectangular pad located on the x-dominant reinforced leg region, centered at (62, 12, 0) mm with size 24 mm in x by 22 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1700 N downward in negative z, 1700 N upward in positive z, 900 N in positive x, and 900 N in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume welded fabrication with at most 3 structural pieces, minimum plate thickness 6 mm, minimum weld leg size 5 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.8 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            85
+          ],
+          "y": [
+            0,
+            85
+          ],
+          "z": [
+            -50,
+            50
+          ]
+        },
+        "mounting_planes": [
+          {
+            "x_mm": 0
+          },
+          {
+            "y_mm": 0
+          }
+        ],
+        "corner_type": "inside_corner",
+        "corner_angle_deg": 90,
+        "wraparound_region_requirement": {
+          "x_range_mm": [
+            0,
+            12
+          ],
+          "y_range_mm": [
+            0,
+            12
+          ],
+          "z_slice_count": 10,
+          "minimum_region_area_fraction_per_slice": 0.5,
+          "minimum_compliant_slice_count": 7,
+          "occupancy_uses_actual_remaining_material": true
+        },
+        "minimum_edge_distance_mm": 12,
+        "minimum_thickness_mm": 6
+      },
+      "interfaces": {
+        "mounting_plane_x0": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 22,
+                "z": -26
+              },
+              {
+                "x": 0,
+                "y": 22,
+                "z": 26
+              }
+            ]
+          }
+        },
+        "mounting_plane_y0": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 22,
+                "y": 0,
+                "z": -26
+              },
+              {
+                "x": 22,
+                "y": 0,
+                "z": 26
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 62,
+            "y": 12,
+            "z": 0
+          },
+          "size_mm": {
+            "x": 24,
+            "z": 22
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1700
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1700
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Primary outward load",
+          "force_vector_N": {
+            "x": 900,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 900,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "welded_plate_assembly",
+        "rules": {
+          "max_part_count": 3,
+          "minimum_plate_thickness_mm": 6,
+          "minimum_weld_leg_size_mm": 5,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.8,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces on both mounting planes",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "wraparound_effect_modeled_geometrically": true
+      },
+      "task_version": "1.2.2",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.2.1. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Quick baseline CAD/FEA feasibility check should be attached in a future revision."
+      }
+    },
+    {
+      "id": "E-T1-04",
+      "name": "Inside-corner bracket with slotted holes",
+      "group": "E",
+      "category": "static_structural",
+      "product_family": {
+        "catalog_track": "corner_bracket",
+        "subtype": "inside_corner"
+      },
+      "mating_system": {
+        "type": "inside_corner",
+        "standard_size": null,
+        "alignment_feature_required": false
+      },
+      "feature_requirements": {
+        "slotted_holes_allowed": true,
+        "slotted_holes_required": true,
+        "wraparound_required": false,
+        "concealed_profile_required": false
+      },
+      "design_requirements_nl": "Design an inside-corner bracket for joining two perpendicular mounting surfaces at an internal 90 degree corner, using slotted mounting holes to permit installation tolerance. Use a coordinate system in which the corner line is parallel to z, the two mounting planes are x = 0 and y = 0, and the bracket body occupies the positive-x positive-y region near the corner. The bracket body must fit inside an axis-aligned bounding box with x in [0, 72] mm, y in [0, 72] mm, and z in [-45, 45] mm. The x = 0 mounting plane contains two slotted holes centered at (0, 18, -22) mm and (0, 18, 22) mm. Each slot must have width 6.6 mm, length 14 mm, and its long axis parallel to z. The y = 0 mounting plane contains two slotted holes centered at (18, 0, -22) mm and (18, 0, 22) mm. Each slot must have width 6.6 mm, length 14 mm, and its long axis parallel to z. Slot geometry must be modeled explicitly in geometry and finite-element evaluation. For reproducibility, the entire slot surface is constrained in translation for all load cases; bearing-direction-dependent contact is intentionally not modeled at this stage. The slot-end radius is therefore explicitly 3.3 mm. The primary load interface is a flat rectangular pad located on the x-dominant leg region, centered at (54, 10, 0) mm with size 20 mm in x by 20 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1150 N downward in negative z, 1150 N upward in positive z, 650 N in positive x, and 500 N in positive y. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume machined single-body manufacturing with minimum thickness 5 mm, minimum internal radius at slot ends 3.3 mm, and no undercuts. minimum_edge_distance_mm is intentionally defined as the minimum distance from slot center to nearest free edge using the slot centroid as the reference point, not the slot perimeter. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.95 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            72
+          ],
+          "y": [
+            0,
+            72
+          ],
+          "z": [
+            -45,
+            45
+          ]
+        },
+        "mounting_planes": [
+          {
+            "x_mm": 0
+          },
+          {
+            "y_mm": 0
+          }
+        ],
+        "corner_type": "inside_corner",
+        "corner_angle_deg": 90,
+        "minimum_edge_distance_mm": 11,
+        "minimum_thickness_mm": 5,
+        "minimum_edge_distance_reference": "slot_centroid"
+      },
+      "interfaces": {
+        "mounting_plane_x0": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "slot",
+            "slot_width_mm": 6.6,
+            "slot_length_mm": 14.0,
+            "slot_axis": "z",
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": 22
+              }
+            ],
+            "fea_modeling_requirement": "explicit"
+          }
+        },
+        "mounting_plane_y0": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "slot",
+            "slot_width_mm": 6.6,
+            "slot_length_mm": 14.0,
+            "slot_axis": "z",
+            "locations_mm": [
+              {
+                "x": 18,
+                "y": 0,
+                "z": -22
+              },
+              {
+                "x": 18,
+                "y": 0,
+                "z": 22
+              }
+            ],
+            "fea_modeling_requirement": "explicit"
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 54,
+            "y": 10,
+            "z": 0
+          },
+          "size_mm": {
+            "x": 20,
+            "z": 20
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1150
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1150
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Primary outward load",
+          "force_vector_N": {
+            "x": 650,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 500,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 5,
+          "minimum_slot_end_radius_mm": 3.3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.95,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "the entire explicit slot surface is constrained in translation on both mounting planes",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.2.2",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.2.1. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Quick baseline CAD/FEA feasibility check should be attached in a future revision."
+      }
+    }
+  ]
+}

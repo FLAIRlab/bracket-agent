@@ -1,0 +1,1418 @@
+{
+  "benchmark_name": "l_bracket_tier1_v1",
+  "benchmark_version": "1.0",
+  "description": "Tier 1 L-bracket benchmark with detailed per-task schema, self-contained natural-language requirements, explicit envelope ranges, standardized load cases, and reference-solution placeholders.",
+  "family_definition": {
+    "family_A": "Plain cantilever wall-mounted L-brackets",
+    "family_B": "Base-mounted upright support L-brackets",
+    "family_C": "Gusseted cantilever L-brackets",
+    "family_D": "Sheet-metal bent L-brackets"
+  },
+  "global_conventions": {
+    "coordinate_system": {
+      "x": "primary projection direction from the mounting plane toward the load interface",
+      "y": "horizontal lateral direction orthogonal to x within the mounting plane",
+      "z": "vertical upward"
+    },
+    "coordinate_system_note": "This benchmark uses x as the primary bracket projection direction for cantilever-style L-brackets. This differs from the handrail benchmark, where y was the outward direction.",
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "density": "kg/m^3",
+      "elastic_modulus": "GPa"
+    },
+    "submission_requirements": {
+      "design_scope": "bracket only",
+      "allowed_output": [
+        "STEP",
+        "parametric CAD script",
+        "watertight mesh"
+      ],
+      "material_assignment": "must use task-specified material",
+      "assembly_scope": "single bracket body unless task explicitly allows multi-part welded assembly"
+    },
+    "evaluation_method": {
+      "objective": "minimize bracket mass",
+      "constraints_policy": "all load cases must satisfy all constraints",
+      "stress_metric": "von Mises stress",
+      "displacement_metric": "maximum displacement magnitude at load interface",
+      "linear_static_analysis": true,
+      "small_deformation_assumption": true,
+      "mass_definition": "Bracket-body mass only. Fasteners and mating components are excluded. Weld filler mass is excluded unless a future task explicitly includes it."
+    },
+    "envelope_scope": {
+      "scope": "bracket_body_only",
+      "definition": "The task envelope constrains only the bracket geometry. Supported equipment, shelves, or attached components are excluded from the envelope."
+    },
+    "envelope_anchor_rule": {
+      "type": "explicit_ranges_required",
+      "definition": "Each task defines envelope_ranges_mm explicitly. The bracket body must remain fully inside those ranges."
+    },
+    "load_application_rule": {
+      "method": "distributed_over_load_interface",
+      "definition": "Each load case is applied as a distributed load over the specified load interface patch.",
+      "resultant_passes_through": "load_interface_reference_center",
+      "notes": "The equivalent resultant of the distributed load must pass through the stated load interface center."
+    },
+    "standard_load_case_set": {
+      "load_cases": [
+        "downward",
+        "upward",
+        "outward",
+        "lateral"
+      ],
+      "definition": "Tier 1 tasks use four canonical load cases unless a task explicitly adds more. Downward and upward are along z, outward is along +x, and lateral is along +y."
+    },
+    "minimum_edge_distance_definition": {
+      "quantity": "hole_center_to_nearest_free_edge",
+      "definition": "minimum_edge_distance_mm is the minimum Euclidean distance from the center of any mounting hole to the nearest free edge of the bracket body."
+    },
+    "interface_abstraction": {
+      "mounting_hole_interface": "hole cylindrical surfaces are fixed in all translational degrees of freedom unless otherwise specified",
+      "base_pad_interface": "the specified base pad region on the mounting plane is fixed in all translational degrees of freedom unless otherwise specified",
+      "load_interface": "loads are applied over the specified contact patch with equivalent resultant defined by the global load application rule"
+    },
+    "evaluation_mesh_specification_template": {
+      "element_type": "placeholder_pending",
+      "global_target_element_size_mm": "placeholder_pending",
+      "local_refinement_regions": "placeholder_pending",
+      "stress_extraction_rule": "placeholder_pending"
+    }
+  },
+  "tasks": [
+    {
+      "id": "L-T1-01",
+      "name": "Plain cantilever L-bracket, light-duty machined steel",
+      "family": "A",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a wall-mounted cantilever L-bracket for supporting a light equipment load. The bracket consists of two perpendicular legs joined at 90 degrees. One leg mounts to a vertical wall and the other projects horizontally outward to support the load. Use a coordinate system in which x is the projection direction from the wall toward the load interface, y is the horizontal lateral direction along the wall, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 100] mm, y in [-30, 30] mm, and z in [-50, 50] mm. The wall mounting plane is at x = 0. The wall-side interface consists of two 8.5 mm diameter bolt holes centered at (0, 0, -25) mm and (0, 0, 25) mm. The load interface is a flat rectangular pad centered at (80, 0, 0) mm with size 30 mm in y by 30 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1000 N downward in negative z, 1000 N upward in positive z, 600 N outward in positive x, and 400 N lateral in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume machined-plate manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 1.5 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            100
+          ],
+          "y": [
+            -30,
+            30
+          ],
+          "z": [
+            -50,
+            50
+          ]
+        },
+        "mounting_plane": {
+          "x_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "minimum_edge_distance_mm": 12,
+        "minimum_thickness_mm": 6
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -25
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 25
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 80,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 30,
+            "z": 30
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1000
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1000
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 600,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 400,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_plate",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.5,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    },
+    {
+      "id": "L-T1-02",
+      "name": "Plain cantilever L-bracket, tight stiffness packaging case",
+      "family": "A",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a compact wall-mounted cantilever L-bracket for supporting a moderate equipment load under tight displacement and packaging constraints. Use a coordinate system in which x is the projection direction from the wall toward the load interface, y is the horizontal lateral direction along the wall, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 90] mm, y in [-25, 25] mm, and z in [-45, 45] mm. The wall mounting plane is at x = 0. The wall-side interface consists of two 6.6 mm diameter bolt holes centered at (0, 0, -22) mm and (0, 0, 22) mm. The load interface is a flat rectangular pad centered at (72, 0, 0) mm with size 24 mm in y by 24 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1200 N downward in negative z, 1200 N upward in positive z, 700 N outward in positive x, and 450 N lateral in positive y. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume machined-plate manufacturing with minimum thickness 5 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.8 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            90
+          ],
+          "y": [
+            -25,
+            25
+          ],
+          "z": [
+            -45,
+            45
+          ]
+        },
+        "mounting_plane": {
+          "x_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 5
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 22
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 72,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 24,
+            "z": 24
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1200
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1200
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 700,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 450,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "machined_plate",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 5,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.8,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    },
+    {
+      "id": "L-T1-03",
+      "name": "Plain cantilever L-bracket, asymmetric bolt pattern",
+      "family": "A",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a wall-mounted cantilever L-bracket for an equipment load with an asymmetric mounting-hole layout. Use a coordinate system in which x is the projection direction from the wall toward the load interface, y is the horizontal lateral direction along the wall, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 120] mm, y in [-40, 40] mm, and z in [-55, 55] mm. The wall mounting plane is at x = 0. The wall-side interface consists of three 8.5 mm diameter bolt holes centered at (0, -12, -28) mm, (0, 12, 0) mm, and (0, -12, 28) mm. The load interface is a flat rectangular pad centered at (92, 8, 0) mm with size 28 mm in y by 28 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1400 N downward in negative z, 1400 N upward in positive z, 800 N outward in positive x, and 500 N lateral in positive y. Use ASTM A572 Grade 50 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 345 MPa, and density 7850 kg/m^3. Assume machined-plate manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 1.2 mm and maximum von Mises stress below 115.0 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            120
+          ],
+          "y": [
+            -40,
+            40
+          ],
+          "z": [
+            -55,
+            55
+          ]
+        },
+        "mounting_plane": {
+          "x_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "minimum_edge_distance_mm": 12,
+        "minimum_thickness_mm": 6
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 3,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -12,
+                "z": -28
+              },
+              {
+                "x": 0,
+                "y": 12,
+                "z": 0
+              },
+              {
+                "x": 0,
+                "y": -12,
+                "z": 28
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 92,
+            "y": 8,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 28,
+            "z": 28
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1400
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1400
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 800,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 500,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A572 Grade 50 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 345,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_plate",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.2,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 115.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    },
+    {
+      "id": "L-T1-04",
+      "name": "Base-mounted upright support L-bracket, welded steel",
+      "family": "B",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a base-mounted upright support L-bracket for supporting a vertical plate-like component from a horizontal base. The bracket consists of a horizontal base leg attached to the floor or frame and a vertical leg rising upward to support the load interface. Use a coordinate system in which x is the projection direction from the base mounting plane toward the load interface, y is the horizontal lateral direction across the bracket width, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 90] mm, y in [-35, 35] mm, and z in [0, 120] mm. The base mounting plane is at z = 0. The base-side interface consists of four 9.0 mm diameter bolt holes centered at (18, -18, 0) mm, (18, 18, 0) mm, (62, -18, 0) mm, and (62, 18, 0) mm. The load interface is a flat rectangular pad centered at (75, 0, 90) mm with size 30 mm in x by 40 mm in y. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1800 N downward in negative z, 1800 N upward in positive z, 900 N outward in positive x, and 600 N lateral in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume welded fabrication with at most 2 plates, minimum plate thickness 6 mm, minimum weld leg size 5 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 1.3 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            90
+          ],
+          "y": [
+            -35,
+            35
+          ],
+          "z": [
+            0,
+            120
+          ]
+        },
+        "mounting_plane": {
+          "z_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "minimum_edge_distance_mm": 12,
+        "minimum_thickness_mm": 6
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid base plane",
+          "fastener_pattern": {
+            "count": 4,
+            "hole_style": "straight",
+            "hole_diameter_mm": 9.0,
+            "locations_mm": [
+              {
+                "x": 18,
+                "y": -18,
+                "z": 0
+              },
+              {
+                "x": 18,
+                "y": 18,
+                "z": 0
+              },
+              {
+                "x": 62,
+                "y": -18,
+                "z": 0
+              },
+              {
+                "x": 62,
+                "y": 18,
+                "z": 0
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 75,
+            "y": 0,
+            "z": 90
+          },
+          "size_mm": {
+            "x": 30,
+            "y": 40
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1800
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1800
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 900,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 600,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "welded_plate",
+        "rules": {
+          "max_part_count": 2,
+          "minimum_plate_thickness_mm": 6,
+          "minimum_weld_leg_size_mm": 5,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.3,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces on the base plane",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    },
+    {
+      "id": "L-T1-05",
+      "name": "Base-mounted upright support L-bracket, compact stainless case",
+      "family": "B",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a compact base-mounted upright support L-bracket for a vertical support application with tight packaging. Use a coordinate system in which x is the projection direction from the base mounting plane toward the load interface, y is the horizontal lateral direction across the bracket width, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 75] mm, y in [-28, 28] mm, and z in [0, 100] mm. The base mounting plane is at z = 0. The base-side interface consists of two 6.6 mm diameter bolt holes centered at (20, 0, 0) mm and (55, 0, 0) mm. The load interface is a flat rectangular pad centered at (62, 0, 78) mm with size 24 mm in x by 30 mm in y. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1300 N downward in negative z, 1300 N upward in positive z, 700 N outward in positive x, and 450 N lateral in positive y. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume machined single-body manufacturing with minimum thickness 5 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.9 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            75
+          ],
+          "y": [
+            -28,
+            28
+          ],
+          "z": [
+            0,
+            100
+          ]
+        },
+        "mounting_plane": {
+          "z_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 5
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid base plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 20,
+                "y": 0,
+                "z": 0
+              },
+              {
+                "x": 55,
+                "y": 0,
+                "z": 0
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 62,
+            "y": 0,
+            "z": 78
+          },
+          "size_mm": {
+            "x": 24,
+            "y": 30
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1300
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1300
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 700,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 450,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 5,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.9,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces on the base plane",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    },
+    {
+      "id": "L-T1-06",
+      "name": "Gusseted cantilever L-bracket, moderate duty",
+      "family": "C",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a gusseted wall-mounted cantilever L-bracket for supporting a moderate equipment load. The bracket consists of two perpendicular legs joined at 90 degrees, with at least one gusset or rib-like reinforcement connecting the legs. Use a coordinate system in which x is the projection direction from the wall toward the load interface, y is the horizontal lateral direction along the wall, and z is vertical upward. The bracket body, including the gusset, must fit inside an axis-aligned bounding box with x in [0, 120] mm, y in [-35, 35] mm, and z in [-55, 55] mm. The wall mounting plane is at x = 0. The wall-side interface consists of two 8.5 mm diameter bolt holes centered at (0, 0, -28) mm and (0, 0, 28) mm. The load interface is a flat rectangular pad centered at (92, 0, 0) mm with size 28 mm in y by 28 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1800 N downward in negative z, 1800 N upward in positive z, 1000 N outward in positive x, and 600 N lateral in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume welded or machined single-assembly manufacturing with at most 3 structural pieces, minimum thickness 6 mm, minimum internal fillet or gusset root radius 4 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 1.0 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            120
+          ],
+          "y": [
+            -35,
+            35
+          ],
+          "z": [
+            -55,
+            55
+          ]
+        },
+        "mounting_plane": {
+          "x_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "gusset_required": true,
+        "minimum_edge_distance_mm": 12,
+        "minimum_thickness_mm": 6
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -28
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 28
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 92,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 28,
+            "z": 28
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1800
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1800
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 1000,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 600,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "welded_or_machined_assembly",
+        "rules": {
+          "max_part_count": 3,
+          "minimum_thickness_mm": 6,
+          "minimum_root_radius_mm": 4,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.0,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    },
+    {
+      "id": "L-T1-07",
+      "name": "Gusseted cantilever L-bracket, packaging-limited high stiffness",
+      "family": "C",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a compact gusseted wall-mounted cantilever L-bracket for a high-stiffness support application. The bracket consists of two perpendicular legs joined at 90 degrees, with at least one gusset or rib-like reinforcement connecting the legs. Use a coordinate system in which x is the projection direction from the wall toward the load interface, y is the horizontal lateral direction along the wall, and z is vertical upward. The bracket body, including the gusset, must fit inside an axis-aligned bounding box with x in [0, 95] mm, y in [-28, 28] mm, and z in [-45, 45] mm. The wall mounting plane is at x = 0. The wall-side interface consists of two 6.6 mm diameter bolt holes centered at (0, 0, -22) mm and (0, 0, 22) mm. The load interface is a flat rectangular pad centered at (74, 0, 0) mm with size 24 mm in y by 24 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1600 N downward in negative z, 1600 N upward in positive z, 900 N outward in positive x, and 500 N lateral in positive y. Use 6061-T6 aluminum with elastic modulus 69 GPa, Poisson ratio 0.33, yield strength 276 MPa, and density 2700 kg/m^3. Assume machined single-body manufacturing with integral rib or gusset features, minimum section thickness 5 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.7 mm and maximum von Mises stress below 92.0 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            95
+          ],
+          "y": [
+            -28,
+            28
+          ],
+          "z": [
+            -45,
+            45
+          ]
+        },
+        "mounting_plane": {
+          "x_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "gusset_required": true,
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 5
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 22
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 74,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 24,
+            "z": 24
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1600
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1600
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 900,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 500,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "6061-T6 aluminum",
+        "elastic_modulus_GPa": 69,
+        "poisson_ratio": 0.33,
+        "yield_strength_MPa": 276,
+        "density_kg_m3": 2700
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_section_thickness_mm": 5,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.7,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 92.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    },
+    {
+      "id": "L-T1-08",
+      "name": "Sheet-metal bent L-bracket, constant-thickness mild steel",
+      "family": "D",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a bent sheet-metal L-bracket formed from a single sheet with constant thickness. One leg mounts to a vertical wall and the other projects horizontally outward to support the load. Use a coordinate system in which x is the projection direction from the wall toward the load interface, y is the horizontal lateral direction along the wall, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 90] mm, y in [-35, 35] mm, and z in [-50, 50] mm. The wall mounting plane is at x = 0. The wall-side interface consists of two 6.6 mm diameter straight holes centered at (0, 0, -24) mm and (0, 0, 24) mm. The load interface is a flat rectangular pad centered at (70, 0, 0) mm with size 30 mm in y by 24 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 900 N downward in negative z, 900 N upward in positive z, 500 N outward in positive x, and 350 N lateral in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume formed-sheet manufacturing as a single body with constant thickness, minimum sheet thickness 4 mm, minimum bend radius 4 mm, no welded reinforcements, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 1.6 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            90
+          ],
+          "y": [
+            -35,
+            35
+          ],
+          "z": [
+            -50,
+            50
+          ]
+        },
+        "mounting_plane": {
+          "x_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "constant_thickness_required": true,
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 4
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 24
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 70,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 30,
+            "z": 24
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -900
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 900
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 500,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 350,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "formed_sheet",
+        "rules": {
+          "single_body_required": true,
+          "constant_thickness_required": true,
+          "minimum_sheet_thickness_mm": 4,
+          "minimum_bend_radius_mm": 4,
+          "welded_reinforcements_allowed": false,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.6,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    },
+    {
+      "id": "L-T1-09",
+      "name": "Sheet-metal bent L-bracket, stainless compact case",
+      "family": "D",
+      "category": "static_structural",
+      "design_requirements_nl": "Design a compact bent sheet-metal L-bracket formed from a single sheet with constant thickness for a moderate support load. Use a coordinate system in which x is the projection direction from the wall toward the load interface, y is the horizontal lateral direction along the wall, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 75] mm, y in [-28, 28] mm, and z in [-42, 42] mm. The wall mounting plane is at x = 0. The wall-side interface consists of three 5.5 mm diameter straight holes centered at (0, 0, -24) mm, (0, 0, 0) mm, and (0, 0, 24) mm. The load interface is a flat rectangular pad centered at (58, 0, 0) mm with size 24 mm in y by 20 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 800 N downward in negative z, 800 N upward in positive z, 450 N outward in positive x, and 300 N lateral in positive y. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume formed-sheet manufacturing as a single body with constant thickness, minimum sheet thickness 3 mm, minimum bend radius 3 mm, no welded reinforcements, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 1.0 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            75
+          ],
+          "y": [
+            -28,
+            28
+          ],
+          "z": [
+            -42,
+            42
+          ]
+        },
+        "mounting_plane": {
+          "x_mm": 0
+        },
+        "corner_angle_deg": 90,
+        "constant_thickness_required": true,
+        "minimum_edge_distance_mm": 8,
+        "minimum_thickness_mm": 3
+      },
+      "interfaces": {
+        "mounting": {
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 3,
+            "hole_style": "straight",
+            "hole_diameter_mm": 5.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 24
+              }
+            ]
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "center_mm": {
+            "x": 58,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 24,
+            "z": 20
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -800
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 800
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Outward pull load",
+          "force_vector_N": {
+            "x": 450,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 300,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "formed_sheet",
+        "rules": {
+          "single_body_required": true,
+          "constant_thickness_required": true,
+          "minimum_sheet_thickness_mm": 3,
+          "minimum_bend_radius_mm": 3,
+          "welded_reinforcements_allowed": false,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.0,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false
+      },
+      "task_version": "1.0",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in v1.0. Add a known-feasible baseline CAD/FEA design in a future revision.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      }
+    }
+  ]
+}

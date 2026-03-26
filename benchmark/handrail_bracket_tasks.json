@@ -1,0 +1,242 @@
+{
+  "dataset_name": "handrail_bracket_task_suite_v1",
+  "description": "Starter benchmark task specs for handrail mounting brackets, with natural-language design requirements included.",
+  "tasks": [
+    {
+      "id": "HR-01",
+      "type": "handrail_wall_bracket",
+      "application": "Residential stair handrail support",
+      "design_requirements_nl": "Design a wall-mounted bracket for a residential stair handrail. The bracket must support a 38 mm round handrail with a wall offset of 75 mm. It should fit within a 120 x 80 x 80 mm envelope and attach to a wood stud using two M5 wood screws. The bracket must safely resist a 900 N load applied at the rail in any direction, with maximum deflection under 2 mm and a minimum safety factor of 2.5. Use steel and assume stamped and welded manufacturing.",
+      "loads": {
+        "force_N": 900,
+        "direction": "any",
+        "application_point": "rail"
+      },
+      "geometry_constraints": {
+        "wall_offset_mm": 75,
+        "rail_diameter_mm": 38,
+        "envelope_mm": [
+          120,
+          80,
+          80
+        ]
+      },
+      "interfaces": {
+        "wall": {
+          "type": "wood_stud",
+          "fasteners": {
+            "count": 2,
+            "size": "M5 wood screw"
+          }
+        },
+        "rail": {
+          "type": "round",
+          "attachment": "saddle"
+        }
+      },
+      "material": "Steel",
+      "manufacturing": "Stamped + welded",
+      "constraints": {
+        "max_deflection_mm": 2,
+        "safety_factor": 2.5
+      }
+    },
+    {
+      "id": "HR-02",
+      "type": "handrail_wall_bracket",
+      "application": "Commercial stair (high traffic)",
+      "design_requirements_nl": "Design a wall-mounted handrail bracket for a high-traffic commercial stair. The bracket must support a 42 mm round handrail with a 90 mm wall offset and stay within a 150 x 100 x 100 mm envelope. It will be mounted to concrete using three M8 anchors. The bracket must resist a 1330 N load applied in any direction, while keeping maximum deflection below 1.5 mm and maintaining a minimum safety factor of 3. Use stainless steel 304 and assume cast plus machined manufacturing.",
+      "loads": {
+        "force_N": 1330,
+        "direction": "any"
+      },
+      "geometry_constraints": {
+        "wall_offset_mm": 90,
+        "rail_diameter_mm": 42,
+        "envelope_mm": [
+          150,
+          100,
+          100
+        ]
+      },
+      "interfaces": {
+        "wall": {
+          "type": "concrete",
+          "fasteners": {
+            "count": 3,
+            "size": "M8 anchor"
+          }
+        }
+      },
+      "material": "Stainless Steel 304",
+      "manufacturing": "Cast + machined",
+      "constraints": {
+        "max_deflection_mm": 1.5,
+        "safety_factor": 3
+      }
+    },
+    {
+      "id": "HR-03",
+      "type": "handrail_glass_bracket",
+      "application": "Modern glass railing",
+      "design_requirements_nl": "Design a bracket to mount a handrail to a 12 mm tempered glass balustrade without damaging the glass. The bracket should provide a 60 mm offset and resist an 800 N lateral load. The mounting interface to the glass should use a clamp-style attachment. Use aluminum and assume CNC manufacturing. The design must prevent glass damage and maintain a minimum safety factor of 2.5.",
+      "loads": {
+        "force_N": 800,
+        "direction": "lateral"
+      },
+      "geometry_constraints": {
+        "offset_mm": 60,
+        "glass_thickness_mm": 12
+      },
+      "interfaces": {
+        "glass": {
+          "type": "tempered",
+          "mounting": "clamp"
+        }
+      },
+      "material": "Aluminum",
+      "manufacturing": "CNC",
+      "constraints": {
+        "no_glass_damage": true,
+        "safety_factor": 2.5
+      }
+    },
+    {
+      "id": "HR-04",
+      "type": "handrail_wall_bracket",
+      "application": "Outdoor stair",
+      "design_requirements_nl": "Design a wall-mounted handrail bracket for an outdoor stair exposed to rain and weather. The bracket must support a 40 mm round rail with an 80 mm wall offset and resist a 1000 N load applied in any direction. It will mount to concrete using three M8 anchors. Use stainless steel 316 and assume cast manufacturing. The design must provide corrosion resistance and achieve a minimum safety factor of 3.",
+      "loads": {
+        "force_N": 1000,
+        "direction": "any"
+      },
+      "geometry_constraints": {
+        "wall_offset_mm": 80,
+        "rail_diameter_mm": 40
+      },
+      "interfaces": {
+        "wall": {
+          "type": "concrete",
+          "fasteners": {
+            "count": 3,
+            "size": "M8 anchor"
+          }
+        }
+      },
+      "material": "Stainless Steel 316",
+      "manufacturing": "Cast",
+      "constraints": {
+        "corrosion_resistance": true,
+        "safety_factor": 3
+      }
+    },
+    {
+      "id": "HR-05",
+      "type": "handrail_hidden_bracket",
+      "application": "High-end residential",
+      "design_requirements_nl": "Design a hidden or minimally visible handrail bracket for a high-end residential interior. The visible area of the bracket should not exceed 40 x 40 mm, and it should provide a 70 mm wall offset. The bracket mounts to a wood stud and must resist an 800 N load applied in any direction. Use steel with machined manufacturing. Aesthetics are a priority, but the design must still keep maximum deflection below 1.5 mm.",
+      "loads": {
+        "force_N": 800,
+        "direction": "any"
+      },
+      "geometry_constraints": {
+        "visible_area_mm": [
+          40,
+          40
+        ],
+        "wall_offset_mm": 70
+      },
+      "interfaces": {
+        "wall": {
+          "type": "wood_stud"
+        }
+      },
+      "material": "Steel",
+      "manufacturing": "Machined",
+      "constraints": {
+        "aesthetic_priority": true,
+        "max_deflection_mm": 1.5
+      }
+    },
+    {
+      "id": "HR-06",
+      "type": "handrail_adjustable_bracket",
+      "application": "Stair with variable slope",
+      "design_requirements_nl": "Design an adjustable handrail bracket for a stair whose slope may vary. The bracket must support a 900 N load and allow installation angles between 25 and 40 degrees while maintaining an 80 mm offset from the wall. It mounts to concrete. Use steel and assume a machined bracket with a pin-joint style adjustment mechanism. The design must include a locking mechanism and maintain a minimum safety factor of 2.5.",
+      "loads": {
+        "force_N": 900
+      },
+      "geometry_constraints": {
+        "angle_range_deg": [
+          25,
+          40
+        ],
+        "offset_mm": 80
+      },
+      "interfaces": {
+        "wall": {
+          "type": "concrete"
+        }
+      },
+      "material": "Steel",
+      "manufacturing": "Machined + pin joint",
+      "constraints": {
+        "locking_mechanism": true,
+        "safety_factor": 2.5
+      }
+    },
+    {
+      "id": "HR-07",
+      "type": "handrail_wall_bracket",
+      "application": "Industrial safety railing",
+      "design_requirements_nl": "Design a heavy-duty wall-mounted handrail bracket for an industrial safety railing on a factory walkway. The bracket must support a 48 mm round rail with a 100 mm offset and resist a 1500 N load applied in any direction. It will mount to a steel beam using four M10 fasteners. Use steel and assume welded manufacturing. The design must keep deflection below 2 mm and maintain a minimum safety factor of 3.",
+      "loads": {
+        "force_N": 1500,
+        "direction": "any"
+      },
+      "geometry_constraints": {
+        "offset_mm": 100,
+        "rail_diameter_mm": 48
+      },
+      "interfaces": {
+        "wall": {
+          "type": "steel_beam",
+          "fasteners": {
+            "count": 4,
+            "size": "M10"
+          }
+        }
+      },
+      "material": "Steel",
+      "manufacturing": "Welded",
+      "constraints": {
+        "max_deflection_mm": 2,
+        "safety_factor": 3
+      }
+    },
+    {
+      "id": "HR-08",
+      "type": "handrail_adapter_bracket",
+      "application": "Retrofit installation",
+      "design_requirements_nl": "Design a retrofit handrail bracket for an existing wall where stud positions are irregular. The bracket must provide an 85 mm offset and allow 50 mm of horizontal adjustment to accommodate misaligned studs. It must resist a 900 N load. The wall interface is wood stud based but irregular. Use steel and assume CNC manufacturing. The design must prioritize adjustability while maintaining a minimum safety factor of 2.5.",
+      "loads": {
+        "force_N": 900
+      },
+      "geometry_constraints": {
+        "offset_mm": 85,
+        "horizontal_adjustment_mm": 50
+      },
+      "interfaces": {
+        "wall": {
+          "type": "wood_stud_irregular"
+        }
+      },
+      "material": "Steel",
+      "manufacturing": "CNC",
+      "constraints": {
+        "adjustability": true,
+        "safety_factor": 2.5
+      }
+    }
+  ]
+}

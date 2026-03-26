@@ -1,0 +1,1135 @@
+{
+  "benchmark_name": "handrail_bracket_tier1_v2_expanded_detailed",
+  "description": "Expanded Tier 1 static handrail bracket benchmark with detailed per-task schema, self-contained natural-language requirements, and added catalog-inspired product families including flat-handrail, inline, offset, and weld-on brackets.",
+  "catalog_informed_updates": [
+    "Expanded coverage for flat-handrail support in addition to round-handrail support.",
+    "Expanded coverage for screw-mount and weld-on support brackets.",
+    "Expanded coverage for inline and offset support layouts.",
+    "Expanded coverage for countersunk and straight mounting-hole styles.",
+    "Expanded coverage for formed-sheet, cast, and welded fabrication patterns."
+  ],
+  "global_conventions": {
+    "coordinate_system": {
+      "x": "along wall and along handrail axis",
+      "y": "outward normal from mounting surface toward handrail",
+      "z": "vertical upward"
+    },
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "density": "kg/m^3",
+      "elastic_modulus": "GPa"
+    },
+    "submission_requirements": {
+      "design_scope": "bracket only",
+      "allowed_output": [
+        "STEP",
+        "parametric CAD script",
+        "watertight mesh"
+      ],
+      "material_assignment": "must use task-specified material",
+      "assembly_scope": "single bracket body unless task explicitly allows multi-part welded assembly"
+    },
+    "evaluation_method": {
+      "objective": "minimize bracket mass",
+      "constraints_policy": "all load cases must satisfy all constraints",
+      "stress_metric": "von Mises stress",
+      "displacement_metric": "maximum displacement magnitude at rail interface",
+      "linear_static_analysis": true,
+      "small_deformation_assumption": true
+    },
+    "interface_abstraction": {
+      "wall_interface": "fastener hole center regions are fixed in all translational degrees of freedom unless otherwise specified",
+      "rail_interface": "load is applied at rail saddle/contact region as distributed force over the specified contact patch or equivalent reference surface",
+      "weld_pad_interface": "weld pad region on mounting plane is fixed in all translational degrees of freedom unless otherwise specified"
+    }
+  },
+  "tasks": [
+    {
+      "id": "HR-T1-01",
+      "source_task": "HR-01",
+      "name": "Residential wall-mounted round handrail bracket",
+      "category": "static_structural",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "formed"
+      ],
+      "design_requirements_nl": "Design a wall-mounted bracket for a residential stair handrail. The bracket must support a 38 mm diameter round handrail whose centerline is located 75 mm outward from the wall. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 120 mm in x, 80 mm in y, and 80 mm in z, with the mounting wall located at y = 0 and the rail center at (0, 75, 0) mm. The wall-side interface consists of two 5.5 mm diameter fastener holes located at (0, 0, -25) mm and (0, 0, 25) mm, representing attachment to a wood stud. The handrail interface is a saddle attachment for the round rail using a 120 degree saddle band with 20 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 900 N downward in the negative z direction, 900 N outward from the wall in the positive y direction, 900 N along the rail axis in the positive x direction, and 900 N upward in the positive z direction. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume stamped-plus-welded manufacturing with at most 2 parts, minimum sheet thickness 4 mm, minimum bend radius 4 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 2.0 mm and maximum von Mises stress below 100.0 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "geometry_constraints": {
+        "envelope_definition": "Bracket geometry must lie within the axis-aligned bounding box relative to wall interface datum.",
+        "envelope_mm": {
+          "x_span": 120,
+          "y_span": 80,
+          "z_span": 80
+        },
+        "mounting_plane": {
+          "y_mm": 0
+        },
+        "rail_center_location_mm": {
+          "x": 0,
+          "y": 75,
+          "z": 0
+        },
+        "rail": {
+          "shape": "round",
+          "diameter_mm": 38,
+          "attachment_type": "saddle"
+        },
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 4
+      },
+      "interfaces": {
+        "wall": {
+          "substrate": "wood stud",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 5.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -25
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 25
+              }
+            ]
+          }
+        },
+        "rail": {
+          "contact_patch": {
+            "type": "saddle_band",
+            "arc_degrees": 120,
+            "axial_width_mm": 20
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -900
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Outward pull from wall",
+          "force_vector_N": {
+            "x": 0,
+            "y": 900,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Along-rail axial load positive x",
+          "force_vector_N": {
+            "x": 900,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Upward lift load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 900
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "stamped_plus_welded",
+        "rules": {
+          "max_part_count": 2,
+          "minimum_sheet_thickness_mm": 4,
+          "minimum_bend_radius_mm": 4,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 2.0,
+        "minimum_safety_factor": 2.5,
+        "max_von_mises_MPa": 100.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "substrate_failure_checked": false,
+        "contact_nonlinearity_modeled": false
+      }
+    },
+    {
+      "id": "HR-T1-02",
+      "source_task": "HR-02",
+      "name": "Commercial high-traffic round handrail bracket",
+      "category": "static_structural",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "cast",
+        "straight_holes"
+      ],
+      "design_requirements_nl": "Design a wall-mounted bracket for a high-traffic commercial stair handrail. The bracket must support a 42 mm diameter round handrail whose centerline is located 90 mm outward from a concrete wall. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 150 mm in x, 100 mm in y, and 100 mm in z, with the mounting wall located at y = 0 and the rail center at (0, 90, 0) mm. The wall-side interface consists of three 9.0 mm diameter anchor holes located at (0, 0, -35) mm, (0, 0, 0) mm, and (0, 0, 35) mm. The handrail interface is a saddle attachment for the round rail using a 120 degree saddle band with 24 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 1330 N downward in the negative z direction, 1330 N outward from the wall in the positive y direction, 1330 N along the rail axis in the positive x direction, and 1330 N upward in the positive z direction. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume cast-plus-machined manufacturing as a single-body part with minimum wall thickness 5 mm, minimum internal radius 3 mm, and no fully enclosed internal voids. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.5 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "geometry_constraints": {
+        "envelope_definition": "Bracket geometry must lie within the axis-aligned bounding box relative to wall interface datum.",
+        "envelope_mm": {
+          "x_span": 150,
+          "y_span": 100,
+          "z_span": 100
+        },
+        "mounting_plane": {
+          "y_mm": 0
+        },
+        "rail_center_location_mm": {
+          "x": 0,
+          "y": 90,
+          "z": 0
+        },
+        "rail": {
+          "shape": "round",
+          "diameter_mm": 42,
+          "attachment_type": "saddle"
+        },
+        "minimum_edge_distance_mm": 12,
+        "minimum_thickness_mm": 5
+      },
+      "interfaces": {
+        "wall": {
+          "substrate": "concrete",
+          "fastener_pattern": {
+            "count": 3,
+            "hole_style": "straight",
+            "hole_diameter_mm": 9.0,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -35
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 35
+              }
+            ]
+          }
+        },
+        "rail": {
+          "contact_patch": {
+            "type": "saddle_band",
+            "arc_degrees": 120,
+            "axial_width_mm": 24
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward crowd load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1330
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Outward pull from wall",
+          "force_vector_N": {
+            "x": 0,
+            "y": 1330,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Along-rail axial load positive x",
+          "force_vector_N": {
+            "x": 1330,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Upward lift load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1330
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "cast_plus_machined",
+        "rules": {
+          "single_body_required": true,
+          "minimum_wall_thickness_mm": 5,
+          "minimum_internal_radius_mm": 3,
+          "no_fully_enclosed_internal_voids": true
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.5,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "substrate_failure_checked": false,
+        "contact_nonlinearity_modeled": false
+      }
+    },
+    {
+      "id": "HR-T1-03",
+      "source_task": "HR-04",
+      "name": "Outdoor corrosion-resistant round handrail bracket",
+      "category": "static_structural",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "cast"
+      ],
+      "design_requirements_nl": "Design a wall-mounted bracket for an outdoor stair handrail exposed to weather. The bracket must support a 40 mm diameter round handrail whose centerline is located 80 mm outward from a concrete wall. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 140 mm in x, 95 mm in y, and 95 mm in z, with the mounting wall located at y = 0 and the rail center at (0, 80, 0) mm. The wall-side interface consists of three 9.0 mm diameter anchor holes located at (0, 0, -30) mm, (0, 0, 0) mm, and (0, 0, 30) mm. The handrail interface is a saddle attachment for the round rail using a 120 degree saddle band with 22 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 1000 N downward in the negative z direction, 1000 N outward from the wall in the positive y direction, 1000 N along the rail axis in the positive x direction, and 1000 N upward in the positive z direction. Use stainless steel 316 with elastic modulus 193 GPa, Poisson ratio 0.30, yield strength 205 MPa, and density 8000 kg/m^3. Assume cast manufacturing as a single-body part with minimum wall thickness 5 mm, minimum internal radius 3 mm, and required draft angle of 2 degrees. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.8 mm and maximum von Mises stress below 68.3 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "geometry_constraints": {
+        "envelope_definition": "Bracket geometry must lie within the axis-aligned bounding box relative to wall interface datum.",
+        "envelope_mm": {
+          "x_span": 140,
+          "y_span": 95,
+          "z_span": 95
+        },
+        "mounting_plane": {
+          "y_mm": 0
+        },
+        "rail_center_location_mm": {
+          "x": 0,
+          "y": 80,
+          "z": 0
+        },
+        "rail": {
+          "shape": "round",
+          "diameter_mm": 40,
+          "attachment_type": "saddle"
+        },
+        "minimum_edge_distance_mm": 12,
+        "minimum_thickness_mm": 5
+      },
+      "interfaces": {
+        "wall": {
+          "substrate": "concrete",
+          "fastener_pattern": {
+            "count": 3,
+            "hole_style": "straight",
+            "hole_diameter_mm": 9.0,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -30
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 30
+              }
+            ]
+          }
+        },
+        "rail": {
+          "contact_patch": {
+            "type": "saddle_band",
+            "arc_degrees": 120,
+            "axial_width_mm": 22
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1000
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Outward pull from wall",
+          "force_vector_N": {
+            "x": 0,
+            "y": 1000,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Along-rail axial load positive x",
+          "force_vector_N": {
+            "x": 1000,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Upward lift load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1000
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 316",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.3,
+        "yield_strength_MPa": 205,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "cast",
+        "rules": {
+          "single_body_required": true,
+          "minimum_wall_thickness_mm": 5,
+          "minimum_internal_radius_mm": 3,
+          "draft_angle_required_deg": 2
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.8,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 68.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "substrate_failure_checked": false,
+        "contact_nonlinearity_modeled": false
+      }
+    },
+    {
+      "id": "HR-T1-04",
+      "source_task": "HR-07",
+      "name": "Heavy-duty industrial round handrail bracket",
+      "category": "static_structural",
+      "catalog_alignment": [
+        "welded_or_bolted_mount",
+        "round_handrail",
+        "offset",
+        "welded"
+      ],
+      "design_requirements_nl": "Design a heavy-duty bracket for an industrial safety handrail mounted to a steel beam. The bracket must support a 48 mm diameter round handrail whose centerline is located 100 mm outward from the mounting surface. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the mounting surface toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 180 mm in x, 120 mm in y, and 120 mm in z, with the mounting surface located at y = 0 and the rail center at (0, 100, 0) mm. The wall-side interface consists of four 11.0 mm diameter bolt holes located at (-25, 0, -35) mm, (25, 0, -35) mm, (-25, 0, 35) mm, and (25, 0, 35) mm. The handrail interface is a saddle attachment for the round rail using a 120 degree saddle band with 28 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 1500 N downward in the negative z direction, 1500 N outward from the mounting surface in the positive y direction, 1500 N along the rail axis in the positive x direction, and 1500 N upward in the positive z direction. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume welded fabrication with at most 3 parts, minimum plate thickness 6 mm, minimum weld leg size 5 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 2.0 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "geometry_constraints": {
+        "envelope_definition": "Bracket geometry must lie within the axis-aligned bounding box relative to wall interface datum.",
+        "envelope_mm": {
+          "x_span": 180,
+          "y_span": 120,
+          "z_span": 120
+        },
+        "mounting_plane": {
+          "y_mm": 0
+        },
+        "rail_center_location_mm": {
+          "x": 0,
+          "y": 100,
+          "z": 0
+        },
+        "rail": {
+          "shape": "round",
+          "diameter_mm": 48,
+          "attachment_type": "saddle"
+        },
+        "minimum_edge_distance_mm": 15,
+        "minimum_thickness_mm": 6
+      },
+      "interfaces": {
+        "wall": {
+          "substrate": "steel beam",
+          "fastener_pattern": {
+            "count": 4,
+            "hole_style": "straight",
+            "hole_diameter_mm": 11.0,
+            "locations_mm": [
+              {
+                "x": -25,
+                "y": 0,
+                "z": -35
+              },
+              {
+                "x": 25,
+                "y": 0,
+                "z": -35
+              },
+              {
+                "x": -25,
+                "y": 0,
+                "z": 35
+              },
+              {
+                "x": 25,
+                "y": 0,
+                "z": 35
+              }
+            ]
+          }
+        },
+        "rail": {
+          "contact_patch": {
+            "type": "saddle_band",
+            "arc_degrees": 120,
+            "axial_width_mm": 28
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward industrial service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1500
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Outward pull from mounting surface",
+          "force_vector_N": {
+            "x": 0,
+            "y": 1500,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Along-rail axial load positive x",
+          "force_vector_N": {
+            "x": 1500,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Upward lift load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1500
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "welded",
+        "rules": {
+          "max_part_count": 3,
+          "minimum_plate_thickness_mm": 6,
+          "minimum_weld_leg_size_mm": 5,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 2.0,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "substrate_failure_checked": false,
+        "contact_nonlinearity_modeled": false
+      }
+    },
+    {
+      "id": "HR-T1-05",
+      "source_task": "catalog_flat_01",
+      "name": "Residential flat-bottom handrail countersunk bracket",
+      "category": "static_structural",
+      "catalog_alignment": [
+        "screw_mount",
+        "flat_handrail",
+        "formed",
+        "countersunk_holes"
+      ],
+      "design_requirements_nl": "Design a wall-mounted bracket for a residential flat-bottom handrail. The handrail interface is a flat support pad rather than a round saddle. The supported handrail contact surface is 50 mm wide and the handrail reference plane is located 65 mm outward from the wall. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 120 mm in x, 70 mm in y, and 80 mm in z, with the mounting wall located at y = 0 and the handrail reference plane centered at (0, 65, 0) mm. The wall-side interface consists of two countersunk 5.5 mm diameter screw holes located at (0, 0, -24) mm and (0, 0, 24) mm. The handrail interface is a flat support pad measuring 50 mm in x by 20 mm in z. The bracket must withstand four static load cases applied at the handrail interface: 800 N downward in the negative z direction, 800 N outward from the wall in the positive y direction, 800 N along the handrail axis in the positive x direction, and 800 N upward in the positive z direction. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume formed-sheet manufacturing as a single-body part with minimum sheet thickness 4 mm, minimum bend radius 4 mm, flush countersunk fastener seating, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the handrail interface below 1.8 mm and maximum von Mises stress below 100.0 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "geometry_constraints": {
+        "envelope_definition": "Bracket geometry must lie within the axis-aligned bounding box relative to wall interface datum.",
+        "envelope_mm": {
+          "x_span": 120,
+          "y_span": 70,
+          "z_span": 80
+        },
+        "mounting_plane": {
+          "y_mm": 0
+        },
+        "rail_reference_location_mm": {
+          "x": 0,
+          "y": 65,
+          "z": 0
+        },
+        "rail": {
+          "shape": "flat",
+          "support_width_mm": 50,
+          "attachment_type": "flat_pad"
+        },
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 4
+      },
+      "interfaces": {
+        "wall": {
+          "substrate": "wood stud",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "countersunk",
+            "hole_diameter_mm": 5.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 24
+              }
+            ]
+          }
+        },
+        "rail": {
+          "contact_patch": {
+            "type": "flat_pad",
+            "size_mm": {
+              "x": 50,
+              "z": 20
+            }
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -800
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Outward pull from wall",
+          "force_vector_N": {
+            "x": 0,
+            "y": 800,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Along-rail axial load positive x",
+          "force_vector_N": {
+            "x": 800,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Upward lift load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 800
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "formed_sheet",
+        "rules": {
+          "single_body_required": true,
+          "minimum_sheet_thickness_mm": 4,
+          "minimum_bend_radius_mm": 4,
+          "countersink_required": true,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.8,
+        "minimum_safety_factor": 2.5,
+        "max_von_mises_MPa": 100.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at countersunk hole cylindrical bearing surfaces",
+        "fastener_preload_modeled": false,
+        "substrate_failure_checked": false,
+        "contact_nonlinearity_modeled": false
+      }
+    },
+    {
+      "id": "HR-T1-06",
+      "source_task": "catalog_inline_01",
+      "name": "Inline round handrail support bracket",
+      "category": "static_structural",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "inline",
+        "formed"
+      ],
+      "design_requirements_nl": "Design an inline wall-mounted support bracket for a round handrail. The bracket must support a 42 mm diameter round handrail whose centerline is located 70 mm outward from the wall, and the main support stem must remain centered beneath the rail so that the principal structural load path lies in the x = 0 plane. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 110 mm in x, 70 mm in y, and 85 mm in z, with the mounting wall located at y = 0 and the rail center at (0, 70, 0) mm. The wall-side interface consists of three straight 6.6 mm diameter screw holes located at (0, 0, -28) mm, (0, 0, 0) mm, and (0, 0, 28) mm. The handrail interface is a 120 degree saddle band with 22 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 950 N downward in the negative z direction, 950 N outward from the wall in the positive y direction, 950 N along the rail axis in the positive x direction, and 950 N upward in the positive z direction. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume formed manufacturing as a single-body part with minimum thickness 5 mm, straight mounting holes, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.6 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "geometry_constraints": {
+        "envelope_definition": "Bracket geometry must lie within the axis-aligned bounding box relative to wall interface datum.",
+        "envelope_mm": {
+          "x_span": 110,
+          "y_span": 70,
+          "z_span": 85
+        },
+        "mounting_plane": {
+          "y_mm": 0
+        },
+        "rail_center_location_mm": {
+          "x": 0,
+          "y": 70,
+          "z": 0
+        },
+        "alignment_constraint": "primary support stem and rail center must lie in x = 0 plane",
+        "rail": {
+          "shape": "round",
+          "diameter_mm": 42,
+          "attachment_type": "saddle"
+        },
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 5
+      },
+      "interfaces": {
+        "wall": {
+          "substrate": "wood stud or backing plate",
+          "fastener_pattern": {
+            "count": 3,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -28
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 28
+              }
+            ]
+          }
+        },
+        "rail": {
+          "contact_patch": {
+            "type": "saddle_band",
+            "arc_degrees": 120,
+            "axial_width_mm": 22
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -950
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Outward pull from wall",
+          "force_vector_N": {
+            "x": 0,
+            "y": 950,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Along-rail axial load positive x",
+          "force_vector_N": {
+            "x": 950,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Upward lift load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 950
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "formed",
+        "rules": {
+          "single_body_required": true,
+          "minimum_sheet_or_section_thickness_mm": 5,
+          "straight_holes_required": true,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.6,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "substrate_failure_checked": false,
+        "contact_nonlinearity_modeled": false
+      }
+    },
+    {
+      "id": "HR-T1-07",
+      "source_task": "catalog_offset_01",
+      "name": "Offset round handrail support bracket",
+      "category": "static_structural",
+      "catalog_alignment": [
+        "screw_mount",
+        "round_handrail",
+        "offset",
+        "cast_or_formed"
+      ],
+      "design_requirements_nl": "Design an offset wall-mounted support bracket for a round handrail. The bracket must support a 42 mm diameter round handrail whose centerline is located 83 mm outward from the wall, and the rail saddle is intentionally offset in the positive x direction so that the rail center lies at (18, 83, 0) mm rather than directly over the wall fastener centerline. Use a coordinate system in which x is along the wall and along the handrail axis, y is outward from the wall toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 130 mm in x, 83 mm in y, and 90 mm in z, with the mounting wall located at y = 0. The wall-side interface consists of two straight 6.6 mm diameter screw holes located at (0, 0, -24) mm and (0, 0, 24) mm. The handrail interface is a 120 degree saddle band with 22 mm axial width centered on the offset rail location. The bracket must withstand four static load cases applied at the rail interface: 950 N downward in the negative z direction, 950 N outward from the wall in the positive y direction, 950 N along the rail axis in the positive x direction, and 950 N upward in the positive z direction. Use zinc-plated ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume either cast or formed single-body manufacturing, minimum thickness 4.5 mm, straight mounting holes, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.8 mm and maximum von Mises stress below 100.0 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "geometry_constraints": {
+        "envelope_definition": "Bracket geometry must lie within the axis-aligned bounding box relative to wall interface datum.",
+        "envelope_mm": {
+          "x_span": 130,
+          "y_span": 83,
+          "z_span": 90
+        },
+        "mounting_plane": {
+          "y_mm": 0
+        },
+        "rail_center_location_mm": {
+          "x": 18,
+          "y": 83,
+          "z": 0
+        },
+        "rail": {
+          "shape": "round",
+          "diameter_mm": 42,
+          "attachment_type": "saddle"
+        },
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 4.5
+      },
+      "interfaces": {
+        "wall": {
+          "substrate": "wood stud or metal backing",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 24
+              }
+            ]
+          }
+        },
+        "rail": {
+          "contact_patch": {
+            "type": "saddle_band",
+            "arc_degrees": 120,
+            "axial_width_mm": 22
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -950
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Outward pull from wall",
+          "force_vector_N": {
+            "x": 0,
+            "y": 950,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Along-rail axial load positive x",
+          "force_vector_N": {
+            "x": 950,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Upward lift load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 950
+          }
+        }
+      ],
+      "material": {
+        "name": "Zinc-plated ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "cast_or_formed",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 4.5,
+          "straight_holes_required": true,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.8,
+        "minimum_safety_factor": 2.5,
+        "max_von_mises_MPa": 100.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "constrained at cylindrical hole surfaces",
+        "fastener_preload_modeled": false,
+        "substrate_failure_checked": false,
+        "contact_nonlinearity_modeled": false
+      }
+    },
+    {
+      "id": "HR-T1-08",
+      "source_task": "catalog_weld_on_01",
+      "name": "Weld-on round handrail support saddle",
+      "category": "static_structural",
+      "catalog_alignment": [
+        "weld_on",
+        "round_handrail",
+        "support_component"
+      ],
+      "design_requirements_nl": "Design a weld-on support bracket intended for fabrication into a metal railing assembly rather than screw attachment to a wall. The bracket must support a 50 mm diameter round handrail whose centerline is located 76 mm outward from the weld reference plane. Use a coordinate system in which x is along the weld reference plane and along the handrail axis, y is outward from the weld reference plane toward the handrail, and z is vertical upward. The entire bracket must fit inside an axis-aligned bounding box measuring 120 mm in x, 76 mm in y, and 90 mm in z, with the weld reference plane located at y = 0 and the rail center at (0, 76, 0) mm. The mounting interface is a rectangular weld pad measuring 40 mm in x by 70 mm in z centered on the plane y = 0. The handrail interface is a 120 degree saddle band with 26 mm axial width. The bracket must withstand four static load cases applied at the rail interface: 1200 N downward in the negative z direction, 1200 N outward from the weld plane in the positive y direction, 1200 N along the rail axis in the positive x direction, and 1200 N upward in the positive z direction. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume welded fabrication with a single body, minimum plate thickness 6 mm, minimum weld leg size 5 mm, and no mechanical fastener holes. The objective is to minimize bracket mass while keeping maximum displacement at the rail interface below 1.7 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "geometry_constraints": {
+        "envelope_definition": "Bracket geometry must lie within the axis-aligned bounding box relative to weld interface datum.",
+        "envelope_mm": {
+          "x_span": 120,
+          "y_span": 76,
+          "z_span": 90
+        },
+        "mounting_plane": {
+          "y_mm": 0
+        },
+        "rail_center_location_mm": {
+          "x": 0,
+          "y": 76,
+          "z": 0
+        },
+        "rail": {
+          "shape": "round",
+          "diameter_mm": 50,
+          "attachment_type": "saddle"
+        },
+        "minimum_edge_distance_mm": 10,
+        "minimum_thickness_mm": 6
+      },
+      "interfaces": {
+        "mounting_plane": {
+          "substrate": "metal railing post or plate",
+          "weld_pad": {
+            "shape": "rectangle",
+            "size_mm": {
+              "x": 40,
+              "z": 70
+            },
+            "center_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "rail": {
+          "contact_patch": {
+            "type": "saddle_band",
+            "arc_degrees": 120,
+            "axial_width_mm": 26
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1200
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Outward pull from weld plane",
+          "force_vector_N": {
+            "x": 0,
+            "y": 1200,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Along-rail axial load positive x",
+          "force_vector_N": {
+            "x": 1200,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Upward lift load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1200
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "welded",
+        "rules": {
+          "single_body_required": true,
+          "minimum_plate_thickness_mm": 6,
+          "minimum_weld_leg_size_mm": 5,
+          "mechanical_fastener_holes_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 1.7,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "entire weld pad fixed in translation",
+        "fastener_preload_modeled": false,
+        "substrate_failure_checked": false,
+        "contact_nonlinearity_modeled": false
+      }
+    }
+  ]
+}
