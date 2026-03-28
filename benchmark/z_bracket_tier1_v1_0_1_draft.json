@@ -1,0 +1,1270 @@
+{
+  "benchmark_name": "z_bracket_tier1_v1_0_1_draft",
+  "benchmark_version": "1.0.1-draft",
+  "description": "Tier 1 Z-bracket benchmark with six fully specified tasks spanning symmetric baseline, large-offset/web-dominated, stiffness-dominated aluminum, asymmetric torsion-inducing adapter, sheet-metal constant-thickness, and compact packaging-constrained sheet-metal cases. This revision adds evaluator-clarity notes and separate mesh guidance for solid-body and sheet-metal tasks.",
+  "global_conventions": {
+    "coordinate_system": {
+      "x": "primary offset direction between the two flange mounting planes",
+      "y": "horizontal lateral direction within the flange planes",
+      "z": "vertical upward"
+    },
+    "coordinate_system_note": "For Z-bracket tasks, x is the defining offset direction between the fixed flange and the loaded flange.",
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "density": "kg/m^3",
+      "elastic_modulus": "GPa"
+    },
+    "submission_requirements": {
+      "design_scope": "bracket only",
+      "allowed_output": [
+        "STEP",
+        "parametric CAD script",
+        "watertight mesh"
+      ],
+      "material_assignment": "must use task-specified material",
+      "assembly_scope": "single bracket body unless task explicitly allows multi-part welded assembly"
+    },
+    "evaluation_method": {
+      "objective": "minimize bracket mass",
+      "constraints_policy": "all load cases must satisfy all constraints",
+      "stress_metric": "von Mises stress",
+      "displacement_metric": "maximum displacement magnitude at load interface",
+      "linear_static_analysis": true,
+      "small_deformation_assumption": true,
+      "mass_definition": "Bracket-body mass only. Fasteners and mating components are excluded."
+    },
+    "envelope_scope": {
+      "scope": "bracket_body_only",
+      "definition": "The task envelope constrains only the bracket geometry. Mating structures and attached equipment are excluded."
+    },
+    "load_application_rule": {
+      "method": "distributed_over_load_interface",
+      "definition": "Each load case is applied as a distributed load over the specified load interface patch.",
+      "resultant_passes_through": "load_interface_reference_center"
+    },
+    "minimum_edge_distance_definition": {
+      "quantity": "hole_center_to_nearest_free_edge",
+      "definition": "minimum_edge_distance_mm is the minimum Euclidean distance from the center of any mounting hole to the nearest free edge of the bracket body."
+    },
+    "z_bracket_schema_notes": {
+      "offset_distance_mm": "Distance in the global x direction between the fixed flange mounting plane and the loaded flange mounting plane.",
+      "fixed_flange": "The flange whose mounting interface is constrained for the reference structural model.",
+      "loaded_flange": "The flange that carries the defined load interface and receives the applied service loads.",
+      "hole_pattern_centroid_offset_mm": "Offset between the centroids of the mounting-hole patterns on the two flanges measured in the global y direction. This is a geometric quantity, not a derived torsional eccentricity."
+    },
+    "evaluation_mesh_specification_template": {
+      "solid_body_tasks": {
+        "applies_to_families": [
+          "Z-A",
+          "Z-B",
+          "Z-C",
+          "Z-D"
+        ],
+        "element_type": "second_order_tetrahedral_or_equivalent",
+        "global_target_element_size_mm": 2.0,
+        "local_refinement_regions": [
+          "mounting holes",
+          "flange-web transitions",
+          "internal fillets",
+          "loaded flange near load interface"
+        ],
+        "local_target_element_size_mm": 0.5,
+        "stress_extraction_rule": "Report peak von Mises stress away from immediate singular boundary-condition artifacts."
+      },
+      "sheet_metal_tasks": {
+        "applies_to_families": [
+          "Z-E",
+          "Z-F"
+        ],
+        "preferred_element_type": "shell_elements_or_equivalent_thin_structure_formulation",
+        "alternate_solid_meshing_note": "If solid elements are used instead of shell elements, the mesh must include adequate through-thickness refinement to represent bending stresses reliably; the default solid-body mesh template is not assumed sufficient for thin sheet-metal parts.",
+        "global_target_element_size_mm": 2.0,
+        "local_refinement_regions": [
+          "mounting holes",
+          "bend regions",
+          "loaded flange near load interface"
+        ],
+        "local_target_element_size_mm": 0.5,
+        "stress_extraction_rule": "Report peak von Mises stress away from immediate singular boundary-condition artifacts."
+      }
+    },
+    "load_case_sign_note": {
+      "definition": "For Z-bracket tasks, vertical load cases in +z and -z are intentionally both retained. Evaluators must not assume that upward and downward cases are redundant by symmetry, because Z-bracket geometry generally loads the web-flange transitions differently under opposite bending directions."
+    },
+    "boundary_condition_simplification_note": {
+      "definition": "Mounting-hole cylindrical surfaces constrained in translation represent a rigid-fastener simplification. This may raise local stresses near hole edges, so peak-stress extraction should avoid immediate singular boundary-condition artifacts."
+    }
+  },
+  "tasks": [
+    {
+      "id": "Z-T1-01",
+      "task_version": "1.0.1-draft",
+      "name": "Symmetric machined steel Z-bracket, moderate offset, strength-governed",
+      "family": "Z-A",
+      "category": "static_structural",
+      "design_intent": "Baseline symmetric Z-bracket with moderate offset and symmetric flange hole patterns. Intended to be primarily strength-governed rather than stiffness-governed.",
+      "fixed_flange": "rear_flange_x0",
+      "loaded_flange": "front_flange_x35",
+      "offset_distance_mm": 35,
+      "hole_pattern_centroid_offset_mm": 0,
+      "design_requirements_nl": "Design a symmetric machined Z-bracket for connecting two parallel mounting interfaces separated by a moderate offset. The bracket consists of a rear flange mounted to a rigid plane at x = 0, a front flange mounted at x = 35 mm, and a connecting web that transfers load between the flanges. Use a coordinate system in which x is the offset direction between the two flange mounting planes, y is the horizontal lateral direction, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 35] mm, y in [-40, 40] mm, and z in [-55, 55] mm. The rear flange on the plane x = 0 is the fixed flange for the reference model. It contains two 8.5 mm diameter mounting holes centered at (0, 0, -24) mm and (0, 0, 24) mm. The front flange on the plane x = 35 mm is the loaded flange. It contains two 8.5 mm diameter mounting holes centered at (35, 0, -24) mm and (35, 0, 24) mm. The two flange hole patterns are symmetric and have zero centroid offset in the y direction. The load interface is a flat rectangular pad on the outer face of the loaded flange, centered at (35, 0, 0) mm with size 30 mm in y by 30 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1400 N downward in negative z, 1400 N upward in positive z, 1400 N separation load in positive x, and 500 N lateral load in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume machined single-body manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge using hole center as the reference point. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.15 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            35
+          ],
+          "y": [
+            -40,
+            40
+          ],
+          "z": [
+            -55,
+            55
+          ]
+        },
+        "fixed_flange_plane": {
+          "x_mm": 0
+        },
+        "loaded_flange_plane": {
+          "x_mm": 35
+        },
+        "offset_distance_mm": 35,
+        "minimum_edge_distance_mm": 12,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 6,
+        "minimum_internal_radius_mm": 3
+      },
+      "interfaces": {
+        "rear_flange_x0": {
+          "role": "fixed_flange",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 24
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "front_flange_x35": {
+          "role": "loaded_flange",
+          "substrate": "attached component interface",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 35,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 35,
+                "y": 0,
+                "z": 24
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 35,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "located_on": "front_flange_x35",
+          "center_mm": {
+            "x": 35,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 30,
+            "z": 30
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1400
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1400
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Separation load",
+          "force_vector_N": {
+            "x": 1400,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 500,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.15,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "rear flange hole cylindrical surfaces at x = 0 are constrained in translation",
+        "loaded_interface_assumption": "loads are applied to the load pad on the front flange",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the first draft. Add a known-feasible baseline CAD/FEA design after the task spec is reviewed.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "Z-T1-02",
+      "task_version": "1.0.1-draft",
+      "name": "Large-offset machined steel Z-bracket, web-dominated",
+      "family": "Z-B",
+      "category": "static_structural",
+      "design_intent": "Large offset relative to flange size so that web bending/shear and flange-web transitions become much more important than in the baseline symmetric case.",
+      "fixed_flange": "rear_flange_x0",
+      "loaded_flange": "front_flange_x55",
+      "offset_distance_mm": 55,
+      "hole_pattern_centroid_offset_mm": 0,
+      "design_requirements_nl": "Design a machined Z-bracket for connecting two parallel mounting interfaces separated by a large offset, so that the web becomes a governing structural feature. The bracket consists of a rear flange mounted to a rigid plane at x = 0, a front flange mounted at x = 55 mm, and a connecting web that transfers load between the flanges. Use a coordinate system in which x is the offset direction between the two flange mounting planes, y is the horizontal lateral direction, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 55] mm, y in [-38, 38] mm, and z in [-55, 55] mm. The rear flange on x = 0 is the fixed flange for the reference model. It contains two 8.5 mm diameter mounting holes centered at (0, 0, -24) mm and (0, 0, 24) mm. The front flange on x = 55 mm is the loaded flange. It contains two 8.5 mm diameter mounting holes centered at (55, 0, -24) mm and (55, 0, 24) mm. The hole patterns are symmetric and have zero centroid offset in the y direction. The load interface is a flat rectangular pad on the outer face of the loaded flange, centered at (55, 0, 0) mm with size 28 mm in y by 30 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1400 N downward in negative z, 1400 N upward in positive z, 1200 N separation load in positive x, and 500 N lateral load in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume machined single-body manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge using hole center as the reference point. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.25 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            55
+          ],
+          "y": [
+            -38,
+            38
+          ],
+          "z": [
+            -55,
+            55
+          ]
+        },
+        "fixed_flange_plane": {
+          "x_mm": 0
+        },
+        "loaded_flange_plane": {
+          "x_mm": 55
+        },
+        "offset_distance_mm": 55,
+        "minimum_edge_distance_mm": 12,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 6,
+        "minimum_internal_radius_mm": 3
+      },
+      "interfaces": {
+        "rear_flange_x0": {
+          "role": "fixed_flange",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 24
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "front_flange_x55": {
+          "role": "loaded_flange",
+          "substrate": "attached component interface",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 55,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 55,
+                "y": 0,
+                "z": 24
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 55,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "located_on": "front_flange_x55",
+          "center_mm": {
+            "x": 55,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 28,
+            "z": 30
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1400
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1400
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Separation load",
+          "force_vector_N": {
+            "x": 1200,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 500,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.25,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "rear flange hole cylindrical surfaces at x = 0 are constrained in translation",
+        "loaded_interface_assumption": "loads are applied to the load pad on the front flange",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the full Tier 1 draft. Add a known-feasible baseline CAD/FEA design after task review.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "Z-T1-03",
+      "task_version": "1.0.1-draft",
+      "name": "Aluminum Z-bracket, tight deflection limit, stiffness-governed",
+      "family": "Z-C",
+      "category": "static_structural",
+      "design_intent": "Low-modulus material and moderate-to-large offset make deflection the intended governing constraint rather than stress.",
+      "fixed_flange": "rear_flange_x0",
+      "loaded_flange": "front_flange_x45",
+      "offset_distance_mm": 45,
+      "hole_pattern_centroid_offset_mm": 0,
+      "design_requirements_nl": "Design an aluminum Z-bracket for connecting two parallel mounting interfaces separated by a moderate-to-large offset, with the task intentionally made stiffness-governed rather than primarily strength-governed. The bracket consists of a rear flange mounted to a rigid plane at x = 0, a front flange mounted at x = 45 mm, and a connecting web that transfers load between the flanges. Use a coordinate system in which x is the offset direction between the two flange mounting planes, y is the horizontal lateral direction, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 45] mm, y in [-40, 40] mm, and z in [-58, 58] mm. The rear flange on x = 0 is the fixed flange for the reference model. It contains two 6.6 mm diameter mounting holes centered at (0, 0, -24) mm and (0, 0, 24) mm. The front flange on x = 45 mm is the loaded flange. It contains two 6.6 mm diameter mounting holes centered at (45, 0, -24) mm and (45, 0, 24) mm. The hole patterns are symmetric and have zero centroid offset in the y direction. The load interface is a flat rectangular pad on the outer face of the loaded flange, centered at (45, 0, 0) mm with size 28 mm in y by 32 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 900 N downward in negative z, 900 N upward in positive z, 600 N separation load in positive x, and 350 N lateral load in positive y. Use 6061-T6 aluminum with elastic modulus 69 GPa, Poisson ratio 0.33, yield strength 276 MPa, and density 2700 kg/m^3. Assume machined single-body manufacturing with minimum thickness 4 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge using hole center as the reference point. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.35 mm and maximum von Mises stress below 92.0 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            45
+          ],
+          "y": [
+            -40,
+            40
+          ],
+          "z": [
+            -58,
+            58
+          ]
+        },
+        "fixed_flange_plane": {
+          "x_mm": 0
+        },
+        "loaded_flange_plane": {
+          "x_mm": 45
+        },
+        "offset_distance_mm": 45,
+        "minimum_edge_distance_mm": 10,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 4,
+        "minimum_internal_radius_mm": 3
+      },
+      "interfaces": {
+        "rear_flange_x0": {
+          "role": "fixed_flange",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 24
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "front_flange_x45": {
+          "role": "loaded_flange",
+          "substrate": "attached component interface",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 45,
+                "y": 0,
+                "z": -24
+              },
+              {
+                "x": 45,
+                "y": 0,
+                "z": 24
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 45,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "located_on": "front_flange_x45",
+          "center_mm": {
+            "x": 45,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 28,
+            "z": 32
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -900
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 900
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Separation load",
+          "force_vector_N": {
+            "x": 600,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 350,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "6061-T6 aluminum",
+        "elastic_modulus_GPa": 69,
+        "poisson_ratio": 0.33,
+        "yield_strength_MPa": 276,
+        "density_kg_m3": 2700
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 4,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.35,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 92.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "rear flange hole cylindrical surfaces at x = 0 are constrained in translation",
+        "loaded_interface_assumption": "loads are applied to the load pad on the front flange",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the full Tier 1 draft. Add a known-feasible baseline CAD/FEA design after task review.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "Z-T1-04",
+      "task_version": "1.0.1-draft",
+      "name": "Asymmetric adapter Z-bracket with y-offset hole centroids",
+      "family": "Z-D",
+      "category": "static_structural",
+      "design_intent": "Mismatched flange hole centroids create a geometric y-offset that introduces a torsion-prone load path in addition to offset bending.",
+      "fixed_flange": "rear_flange_x0",
+      "loaded_flange": "front_flange_x40",
+      "offset_distance_mm": 40,
+      "hole_pattern_centroid_offset_mm": 14,
+      "design_requirements_nl": "Design an asymmetric adapter Z-bracket for connecting two parallel mounting interfaces with mismatched flange hole-pattern centroids, so that the task includes both offset bending and torsion-prone behavior. The bracket consists of a rear flange mounted to a rigid plane at x = 0, a front flange mounted at x = 40 mm, and a connecting web that transfers load between the flanges. Use a coordinate system in which x is the offset direction between the two flange mounting planes, y is the horizontal lateral direction, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 40] mm, y in [-48, 48] mm, and z in [-58, 58] mm. The rear flange on x = 0 is the fixed flange for the reference model. It contains two 8.5 mm diameter mounting holes centered at (0, -7, -24) mm and (0, -7, 24) mm. The front flange on x = 40 mm is the loaded flange. It contains two 8.5 mm diameter mounting holes centered at (40, 7, -24) mm and (40, 7, 24) mm. The offset between the centroids of the flange mounting-hole patterns measured in the global y direction is therefore 14 mm. The load interface is a flat rectangular pad on the outer face of the loaded flange, centered at (40, 7, 0) mm with size 28 mm in y by 30 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1300 N downward in negative z, 1300 N upward in positive z, 1000 N separation load in positive x, and 600 N lateral load in positive y. Use ASTM A572 Grade 50 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 345 MPa, and density 7850 kg/m^3. Assume machined single-body manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge using hole center as the reference point. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.20 mm and maximum von Mises stress below 115.0 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            40
+          ],
+          "y": [
+            -48,
+            48
+          ],
+          "z": [
+            -58,
+            58
+          ]
+        },
+        "fixed_flange_plane": {
+          "x_mm": 0
+        },
+        "loaded_flange_plane": {
+          "x_mm": 40
+        },
+        "offset_distance_mm": 40,
+        "minimum_edge_distance_mm": 12,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 6,
+        "minimum_internal_radius_mm": 3
+      },
+      "interfaces": {
+        "rear_flange_x0": {
+          "role": "fixed_flange",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -7,
+                "z": -24
+              },
+              {
+                "x": 0,
+                "y": -7,
+                "z": 24
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": -7,
+              "z": 0
+            }
+          }
+        },
+        "front_flange_x40": {
+          "role": "loaded_flange",
+          "substrate": "attached component interface",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 40,
+                "y": 7,
+                "z": -24
+              },
+              {
+                "x": 40,
+                "y": 7,
+                "z": 24
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 40,
+              "y": 7,
+              "z": 0
+            }
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "located_on": "front_flange_x40",
+          "center_mm": {
+            "x": 40,
+            "y": 7,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 28,
+            "z": 30
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1300
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1300
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Separation load",
+          "force_vector_N": {
+            "x": 1000,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 600,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A572 Grade 50 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 345,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.2,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 115.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "rear flange hole cylindrical surfaces at x = 0 are constrained in translation",
+        "loaded_interface_assumption": "loads are applied to the load pad on the front flange",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the full Tier 1 draft. Add a known-feasible baseline CAD/FEA design after task review.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "Z-T1-05",
+      "task_version": "1.0.1-draft",
+      "name": "Sheet-metal constant-thickness Z-bracket, tall-flange moderate offset",
+      "family": "Z-E",
+      "category": "static_structural",
+      "design_intent": "Sheet-metal Z-bracket with constant thickness and a different flange proportion / height regime than the machined baseline so the manufacturing constraint interacts with a distinct geometry class.",
+      "fixed_flange": "rear_flange_x0",
+      "loaded_flange": "front_flange_x28",
+      "offset_distance_mm": 28,
+      "hole_pattern_centroid_offset_mm": 0,
+      "design_requirements_nl": "Design a bent sheet-metal Z-bracket formed from a single sheet with constant thickness. The task uses a shorter offset but taller flange proportion than the machined baseline so that the sheet-metal constraint interacts with a distinct geometric regime. The bracket consists of a rear flange mounted to a rigid plane at x = 0, a front flange mounted at x = 28 mm, and a bent connecting web. Use a coordinate system in which x is the offset direction between the two flange mounting planes, y is the horizontal lateral direction, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 28] mm, y in [-32, 32] mm, and z in [-68, 68] mm. The rear flange on x = 0 is the fixed flange for the reference model. It contains two 6.6 mm diameter mounting holes centered at (0, 0, -30) mm and (0, 0, 30) mm. The front flange on x = 28 mm is the loaded flange. It contains two 6.6 mm diameter mounting holes centered at (28, 0, -30) mm and (28, 0, 30) mm. The hole patterns are symmetric and have zero centroid offset in the y direction. The load interface is a flat rectangular pad on the outer face of the loaded flange, centered at (28, 0, 0) mm with size 24 mm in y by 36 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 1100 N downward in negative z, 1100 N upward in positive z, 900 N separation load in positive x, and 400 N lateral load in positive y. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume formed-sheet manufacturing as a single body with constant thickness, minimum sheet thickness 4 mm, minimum bend radius 4 mm, and no welded reinforcements or undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge using hole center as the reference point. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.30 mm and maximum von Mises stress below 71.7 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            28
+          ],
+          "y": [
+            -32,
+            32
+          ],
+          "z": [
+            -68,
+            68
+          ]
+        },
+        "fixed_flange_plane": {
+          "x_mm": 0
+        },
+        "loaded_flange_plane": {
+          "x_mm": 28
+        },
+        "offset_distance_mm": 28,
+        "minimum_edge_distance_mm": 10,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 4,
+        "minimum_internal_radius_mm": 4
+      },
+      "interfaces": {
+        "rear_flange_x0": {
+          "role": "fixed_flange",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -30
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 30
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "front_flange_x28": {
+          "role": "loaded_flange",
+          "substrate": "attached component interface",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 28,
+                "y": 0,
+                "z": -30
+              },
+              {
+                "x": 28,
+                "y": 0,
+                "z": 30
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 28,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "located_on": "front_flange_x28",
+          "center_mm": {
+            "x": 28,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 24,
+            "z": 36
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1100
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1100
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Separation load",
+          "force_vector_N": {
+            "x": 900,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 400,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "formed_sheet",
+        "rules": {
+          "single_body_required": true,
+          "constant_thickness_required": true,
+          "minimum_sheet_thickness_mm": 4,
+          "minimum_bend_radius_mm": 4,
+          "welded_reinforcements_allowed": false,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.3,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "rear flange hole cylindrical surfaces at x = 0 are constrained in translation",
+        "loaded_interface_assumption": "loads are applied to the load pad on the front flange",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "sheet_metal_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the full Tier 1 draft. Add a known-feasible baseline CAD/FEA design after task review.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "Z-T1-06",
+      "task_version": "1.0.1-draft",
+      "name": "Compact packaging-constrained sheet-metal Z-bracket",
+      "family": "Z-F",
+      "category": "static_structural",
+      "design_intent": "Compact packaging and constant-thickness sheet-metal rules create a tightly constrained offset connector problem with little room for freeform reinforcement.",
+      "fixed_flange": "rear_flange_x0",
+      "loaded_flange": "front_flange_x22",
+      "offset_distance_mm": 22,
+      "hole_pattern_centroid_offset_mm": 0,
+      "design_requirements_nl": "Design a compact bent sheet-metal Z-bracket formed from a single sheet with constant thickness for a tightly packaged offset-connection application. The bracket consists of a rear flange mounted to a rigid plane at x = 0, a front flange mounted at x = 22 mm, and a bent connecting web. Use a coordinate system in which x is the offset direction between the two flange mounting planes, y is the horizontal lateral direction, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 22] mm, y in [-28, 28] mm, and z in [-48, 48] mm. The rear flange on x = 0 is the fixed flange for the reference model. It contains two 5.5 mm diameter mounting holes centered at (0, 0, -22) mm and (0, 0, 22) mm. The front flange on x = 22 mm is the loaded flange. It contains two 5.5 mm diameter mounting holes centered at (22, 0, -22) mm and (22, 0, 22) mm. The hole patterns are symmetric and have zero centroid offset in the y direction. The load interface is a flat rectangular pad on the outer face of the loaded flange, centered at (22, 0, 0) mm with size 20 mm in y by 24 mm in z. Apply each service load as a distributed load over the load pad with equivalent resultant passing through the load pad center. The bracket must withstand four static load cases: 850 N downward in negative z, 850 N upward in positive z, 700 N separation load in positive x, and 300 N lateral load in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume formed-sheet manufacturing as a single body with constant thickness, minimum sheet thickness 3 mm, minimum bend radius 3 mm, and no welded reinforcements or undercuts. minimum_edge_distance_mm is defined as the minimum distance from hole center to nearest free edge using hole center as the reference point. The objective is to minimize bracket mass while keeping maximum displacement at the load interface below 0.20 mm and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            22
+          ],
+          "y": [
+            -28,
+            28
+          ],
+          "z": [
+            -48,
+            48
+          ]
+        },
+        "fixed_flange_plane": {
+          "x_mm": 0
+        },
+        "loaded_flange_plane": {
+          "x_mm": 22
+        },
+        "offset_distance_mm": 22,
+        "minimum_edge_distance_mm": 8,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 3,
+        "minimum_internal_radius_mm": 3
+      },
+      "interfaces": {
+        "rear_flange_x0": {
+          "role": "fixed_flange",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 5.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 0,
+                "z": 22
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "front_flange_x22": {
+          "role": "loaded_flange",
+          "substrate": "attached component interface",
+          "fastener_pattern": {
+            "count": 2,
+            "hole_style": "straight",
+            "hole_diameter_mm": 5.5,
+            "locations_mm": [
+              {
+                "x": 22,
+                "y": 0,
+                "z": -22
+              },
+              {
+                "x": 22,
+                "y": 0,
+                "z": 22
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 22,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "load_interface": {
+          "type": "flat_pad",
+          "located_on": "front_flange_x22",
+          "center_mm": {
+            "x": 22,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "y": 20,
+            "z": 24
+          }
+        }
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -850
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward service load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 850
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Separation load",
+          "force_vector_N": {
+            "x": 700,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 300,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "formed_sheet",
+        "rules": {
+          "single_body_required": true,
+          "constant_thickness_required": true,
+          "minimum_sheet_thickness_mm": 3,
+          "minimum_bend_radius_mm": 3,
+          "welded_reinforcements_allowed": false,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_deflection_mm": 0.2,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "rear flange hole cylindrical surfaces at x = 0 are constrained in translation",
+        "loaded_interface_assumption": "loads are applied to the load pad on the front flange",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "sheet_metal_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the full Tier 1 draft. Add a known-feasible baseline CAD/FEA design after task review.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_displacement_mm_by_load_case": null,
+        "evaluation_mesh_specification": {
+          "element_type": null,
+          "global_target_element_size_mm": null,
+          "local_refinement_regions": null,
+          "stress_extraction_rule": null
+        }
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    }
+  ]
+}
