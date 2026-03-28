@@ -1,0 +1,1614 @@
+{
+  "benchmark_name": "u_bracket_tier1_suite_canonical",
+  "benchmark_version": "0.3.1-draft",
+  "description": "Canonical consolidated U-bracket Tier 1 benchmark suite including baseline support/capture, asymmetric loading, symmetric clevis, off-center clevis, stiffness-dominated aluminum, and sheet-metal channel tasks.",
+  "task_count": 6,
+  "feasibility_priority_tasks": [
+    "U-T1-05",
+    "U-T1-06"
+  ],
+  "suite_notes": {
+    "mounting_pattern_note": "All Tier 1 tasks currently use a stiff four-hole web-mounted base pattern at x = 0. More compliant two-hole or reduced-base variants are deferred to future expansions.",
+    "known_gap_note": "Tier 1 clevis tasks do not include +y pin-axis sliding loads. That mode is deferred to future tiers with richer pin/contact abstractions.",
+    "spreading_constraint_field_mapping_note": "Spreading-related constraint field names vary by family because the measurement reference differs by task type. U-A and U-C tasks use max_relative_arm_tip_displacement_mm, while U-B clevis tasks use max_relative_bore_center_distance_change_mm."
+  },
+  "tasks": [
+    {
+      "id": "U-T1-01",
+      "task_version": "0.1.2-draft",
+      "name": "Symmetric machined steel support U-bracket, baseline",
+      "family": "U-A",
+      "category": "static_structural",
+      "design_intent": "Baseline symmetric support/capture U-bracket intended to establish the core mechanics of dual-arm load sharing, arm spreading, extraction resistance, and clearance preservation without introducing clevis pin-loading complexity.",
+      "coordinate_system": {
+        "x": "arm direction, from the web/base toward the arm tips",
+        "y": "across the gap between the two arms",
+        "z": "vertical upward"
+      },
+      "orientation_definition": {
+        "u_open_direction": "+x",
+        "definition": "The U-bracket is a fork-style geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0. Two arms extend in +x, and the captured component sits between the arms and is supported by an internal support shelf between them."
+      },
+      "fixed_base": "web_base_mount",
+      "loaded_interface_location": "support_pad_on_internal_shelf",
+      "arm_length_mm": 55,
+      "design_requirements_nl": "Design a symmetric machined U-bracket for supporting and capturing a rectangular inserted component between two parallel arms. The bracket is a fork-style geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0, and two arms extend in the positive x direction. Use a coordinate system in which x is the arm direction from the base toward the arm tips, y spans across the gap between the two arms, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 55] mm, y in [-26, 26] mm, and z in [-40, 40] mm. The base/web is mounted to a rigid support plane at x = 0 and contains four 6.6 mm diameter mounting holes centered at (0, -18, -22) mm, (0, -18, 22) mm, (0, 18, -22) mm, and (0, 18, 22) mm. Two symmetric arms extend from the base in the positive x direction. The inner faces of the two arms define a capture zone intended to accommodate a rectangular inserted component with envelope dimensions 40 mm in x, 24 mm in y, and 28 mm in z. The inserted component is not modeled explicitly in structural analysis, but the bracket geometry must preserve at least 2.0 mm unloaded clearance and at least 1.5 mm loaded clearance around the component within the defined capture zone. The internal support shelf is the floor of the channel between the two arms, and the top surface of this shelf is fixed at z = 0 for this task. The support/load interface is a flat rectangular pad located on the top surface of the internal support shelf between the arms, centered at (20, 0, 0) mm with size 28 mm in x by 18 mm in y. Apply each service load as a distributed load over this support pad with equivalent resultant passing through the pad center. The bracket must withstand five static load cases: 1200 N downward in negative z, 600 N upward in positive z, 400 N lateral load in positive y, 400 N lateral load in negative y, and 600 N extraction load in positive x. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume machined single-body manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the support pad below 0.20 mm, maximum relative arm spreading below 0.15 mm, and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            55
+          ],
+          "y": [
+            -26,
+            26
+          ],
+          "z": [
+            -40,
+            40
+          ]
+        },
+        "base_mount_plane": {
+          "x_mm": 0
+        },
+        "arm_length_mm": 55,
+        "nominal_reference_arm_spacing_mm": 30,
+        "nominal_reference_arm_spacing_note": "Reference quantity for baseline geometry and measurement-point placement; clearance constraints, not arm spacing itself, are the hard functional requirements.",
+        "minimum_edge_distance_mm": 10,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 6,
+        "minimum_internal_radius_mm": 3,
+        "captured_component_envelope_mm": {
+          "x": 40,
+          "y": 24,
+          "z": 28
+        },
+        "capture_zone_mm": {
+          "x_range": [
+            8,
+            48
+          ],
+          "y_definition": "bounded_by_arm_inner_faces",
+          "z_range": [
+            -14,
+            14
+          ]
+        },
+        "internal_support_shelf_definition": {
+          "role": "floor_of_channel_between_arms",
+          "top_surface_z_mm": 0,
+          "definition": "The internal support shelf is the floor of the channel between the two arms. Its top surface is fixed at z = 0 for this task. The solver may vary shelf thickness and surrounding geometry but must maintain the support pad at the specified location."
+        }
+      },
+      "interfaces": {
+        "web_base_mount": {
+          "role": "fixed_base",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 4,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": -18,
+                "z": 22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": 22
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "support_pad_on_internal_shelf": {
+          "type": "flat_pad",
+          "located_on": "top_surface_of_internal_support_shelf_between_arms",
+          "center_mm": {
+            "x": 20,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "x": 28,
+            "y": 18
+          }
+        }
+      },
+      "deflection_measurement_definition": {
+        "type": "support_pad_displacement",
+        "definition": "Report the maximum displacement magnitude over the support pad surface under each load case."
+      },
+      "arm_spreading_definition": {
+        "spreading_measurement_reference_type": "arm_tip_inner_face_centroid",
+        "spreading_measurement_direction": "y",
+        "spreading_reference_points_definition": {
+          "left_arm_reference_point_mm": {
+            "x": 55,
+            "y": -15,
+            "z": 0
+          },
+          "right_arm_reference_point_mm": {
+            "x": 55,
+            "y": 15,
+            "z": 0
+          }
+        },
+        "definition": "Maximum relative arm spreading is defined as the increase in y-direction distance between the two arm-tip inner-face reference points under load relative to the unloaded geometry."
+      },
+      "clearance_definition": {
+        "minimum_unloaded_clearance_mm": 2.0,
+        "minimum_loaded_clearance_mm": 1.5,
+        "definition": "Clearance is defined as the minimum distance between the inner faces of the two arms within the capture zone minus the captured component envelope width in the y direction."
+      },
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward support load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1200
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward retention load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 600
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Positive lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 400,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Negative lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": -400,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC5",
+          "description": "Positive extraction load",
+          "force_vector_N": {
+            "x": 600,
+            "y": 0,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_support_pad_deflection_mm": 0.2,
+        "max_relative_arm_tip_displacement_mm": 0.15,
+        "minimum_unloaded_clearance_mm": 2.0,
+        "minimum_loaded_clearance_mm": 1.5,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "Base mounting-hole cylindrical surfaces at x = 0 are constrained in translation.",
+        "loaded_interface_assumption": "Loads are applied as distributed loads over the support pad on the top surface of the internal support shelf between the arms.",
+        "captured_component_modeled": false,
+        "clearance_check_method": "Geometric clearance is checked directly from bracket geometry in the unloaded state and from deformed arm positions within the capture zone under load.",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the revised first draft. Add a known-feasible baseline CAD/FEA design after the task spec is reviewed.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_support_pad_deflection_mm_by_load_case": null,
+        "max_relative_arm_tip_displacement_mm_by_load_case": null,
+        "minimum_loaded_clearance_mm_by_load_case": null
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "U-T1-02",
+      "task_version": "0.1-draft",
+      "name": "Symmetric support U-bracket with asymmetric combined loading",
+      "family": "U-A",
+      "category": "static_structural",
+      "design_intent": "Support/capture U-bracket with the same baseline geometry class as U-T1-01 but an off-balance combined load case that forces unequal arm load sharing.",
+      "coordinate_system": {
+        "x": "arm direction, from the web/base toward the arm tips",
+        "y": "across the gap between the two arms",
+        "z": "vertical upward"
+      },
+      "orientation_definition": {
+        "u_open_direction": "+x",
+        "definition": "The U-bracket is a fork-style geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0. Two arms extend in +x, and the captured component sits between the arms and is supported by an internal support shelf between them."
+      },
+      "fixed_base": "web_base_mount",
+      "loaded_interface_location": "support_pad_on_internal_shelf",
+      "arm_length_mm": 55,
+      "design_requirements_nl": "Design a symmetric machined U-bracket for supporting and capturing a rectangular inserted component between two parallel arms, but with loading that intentionally creates unequal arm demand. The bracket is a fork-style geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0, and two arms extend in the positive x direction. Use a coordinate system in which x is the arm direction from the base toward the arm tips, y spans across the gap between the two arms, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 55] mm, y in [-26, 26] mm, and z in [-40, 40] mm. The base/web is mounted to a rigid support plane at x = 0 and contains four 6.6 mm diameter mounting holes centered at (0, -18, -22) mm, (0, -18, 22) mm, (0, 18, -22) mm, and (0, 18, 22) mm. Two symmetric arms extend from the base in the positive x direction. The inner faces of the two arms define a capture zone intended to accommodate a rectangular inserted component with envelope dimensions 40 mm in x, 24 mm in y, and 28 mm in z. The inserted component is not modeled explicitly in structural analysis, but the bracket geometry must preserve at least 2.0 mm unloaded clearance and at least 1.4 mm loaded clearance around the component within the defined capture zone. The internal support shelf is the floor of the channel between the two arms, and the top surface of this shelf is fixed at z = 0 for this task. The support/load interface is a flat rectangular pad located on the top surface of the internal support shelf between the arms, centered at (20, 0, 0) mm with size 28 mm in x by 18 mm in y. Apply each service load as a distributed load over this support pad with equivalent resultant passing through the pad center. The bracket must withstand six static load cases: 1200 N downward in negative z, 600 N upward in positive z, 400 N lateral load in positive y, 400 N lateral load in negative y, 600 N extraction load in positive x, and one asymmetric combined load case of 1000 N downward in negative z together with 400 N in positive y. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume machined single-body manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the support pad below 0.18 mm, maximum relative arm spreading below 0.13 mm, and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            55
+          ],
+          "y": [
+            -26,
+            26
+          ],
+          "z": [
+            -40,
+            40
+          ]
+        },
+        "base_mount_plane": {
+          "x_mm": 0
+        },
+        "arm_length_mm": 55,
+        "nominal_reference_arm_spacing_mm": 30,
+        "nominal_reference_arm_spacing_note": "Reference quantity for baseline geometry and measurement-point placement; clearance constraints, not arm spacing itself, are the hard functional requirements. This task intentionally shares the same baseline geometry class as U-T1-01 so that solver performance can be compared directly under more demanding loading and tighter constraints.",
+        "minimum_edge_distance_mm": 10,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 6,
+        "minimum_internal_radius_mm": 3,
+        "captured_component_envelope_mm": {
+          "x": 40,
+          "y": 24,
+          "z": 28
+        },
+        "capture_zone_mm": {
+          "x_range": [
+            8,
+            48
+          ],
+          "y_definition": "bounded_by_arm_inner_faces",
+          "z_range": [
+            -14,
+            14
+          ]
+        },
+        "internal_support_shelf_definition": {
+          "role": "floor_of_channel_between_arms",
+          "top_surface_z_mm": 0,
+          "definition": "The internal support shelf is the floor of the channel between the two arms. Its top surface is fixed at z = 0 for this task. The solver may vary shelf thickness and surrounding geometry but must maintain the support pad at the specified location."
+        }
+      },
+      "interfaces": {
+        "web_base_mount": {
+          "role": "fixed_base",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 4,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": -18,
+                "z": 22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": 22
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "support_pad_on_internal_shelf": {
+          "type": "flat_pad",
+          "located_on": "top_surface_of_internal_support_shelf_between_arms",
+          "center_mm": {
+            "x": 20,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "x": 28,
+            "y": 18
+          }
+        }
+      },
+      "deflection_measurement_definition": {
+        "type": "support_pad_displacement",
+        "definition": "Report the maximum displacement magnitude over the support pad surface under each load case."
+      },
+      "arm_spreading_definition": {
+        "spreading_measurement_reference_type": "arm_tip_inner_face_centroid",
+        "spreading_measurement_direction": "y",
+        "spreading_reference_points_definition": {
+          "left_arm_reference_point_mm": {
+            "x": 55,
+            "y": -15,
+            "z": 0
+          },
+          "right_arm_reference_point_mm": {
+            "x": 55,
+            "y": 15,
+            "z": 0
+          }
+        },
+        "definition": "Maximum relative arm spreading is defined as the increase in y-direction distance between the two arm-tip inner-face reference points under load relative to the unloaded geometry."
+      },
+      "clearance_definition": {
+        "minimum_unloaded_clearance_mm": 2.0,
+        "minimum_loaded_clearance_mm": 1.4,
+        "definition": "Clearance is defined as the minimum distance between the inner faces of the two arms within the capture zone minus the captured component envelope width in the y direction."
+      },
+      "load_case_definition_note": "This U-A support/capture task uses support-pad loading. The sixth load case intentionally combines vertical and lateral components to force unequal arm load sharing while keeping the geometry symmetric.",
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward support load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1200
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward retention load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 600
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Positive lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 400,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Negative lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": -400,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC5",
+          "description": "Positive extraction load",
+          "force_vector_N": {
+            "x": 600,
+            "y": 0,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC6",
+          "description": "Asymmetric combined downward and lateral load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 400,
+            "z": -1000
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_support_pad_deflection_mm": 0.18,
+        "max_relative_arm_tip_displacement_mm": 0.13,
+        "minimum_unloaded_clearance_mm": 2.0,
+        "minimum_loaded_clearance_mm": 1.4,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "Base mounting-hole cylindrical surfaces at x = 0 are constrained in translation.",
+        "loaded_interface_assumption": "Loads are applied as distributed loads over the support pad on the top surface of the internal support shelf between the arms.",
+        "captured_component_modeled": false,
+        "clearance_check_method": "Geometric clearance is checked directly from bracket geometry in the unloaded state and from deformed arm positions within the capture zone under load.",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the first asymmetric support draft. Add a known-feasible baseline CAD/FEA design after the task spec is reviewed.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_support_pad_deflection_mm_by_load_case": null,
+        "max_relative_arm_tip_displacement_mm_by_load_case": null,
+        "minimum_loaded_clearance_mm_by_load_case": null
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "U-T1-03",
+      "task_version": "0.1.2-draft",
+      "name": "Symmetric clevis pin-hole U-bracket, concentrated bore-center abstraction",
+      "family": "U-B",
+      "category": "static_structural",
+      "design_intent": "Baseline symmetric clevis U-bracket intended to establish the Tier 1 clevis schema: coaxial holes, explicit pin-load abstraction, explicit bore load split, robust bore-region deflection measurement, and bore-center distance change under load.",
+      "coordinate_system": {
+        "x": "arm direction, from the web/base toward the arm tips",
+        "y": "across the gap / pin axis, spanning between the two arms",
+        "z": "vertical upward"
+      },
+      "orientation_definition": {
+        "u_open_direction": "+x",
+        "definition": "The U-bracket is a fork-style clevis geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0. Two arms extend in +x, and a pin-connected component is represented by a simplified load abstraction acting at the coaxial bores in the two arms."
+      },
+      "fixed_base": "web_base_mount",
+      "loaded_interface_location": "clevis_bore_regions",
+      "arm_length_mm": 52,
+      "design_requirements_nl": "Design a symmetric machined clevis U-bracket for supporting a pin-connected component between two parallel arms. The bracket is a fork-style geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0, and two arms extend in the positive x direction. Use a coordinate system in which x is the arm direction from the base toward the arm tips, y spans across the gap and is also the pin axis direction, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 52] mm, y in [-28, 28] mm, and z in [-42, 42] mm. The base/web is mounted to a rigid support plane at x = 0 and contains four 8.5 mm diameter mounting holes centered at (0, -18, -22) mm, (0, -18, 22) mm, (0, 18, -22) mm, and (0, 18, 22) mm. Two symmetric arms extend from the base in the positive x direction. Each arm contains a bore whose axis is parallel to y. The two bores must remain coaxial. The bore centerline is located at x = 40 mm and z = 0 mm. The nominal reference arm spacing is 32 mm, and the nominal bore-center y coordinates are -16 mm and 16 mm. The bores have diameter 10 mm. For this baseline clevis task, the pin-connected component is not modeled explicitly. Instead, apply a concentrated bore-center abstraction at each bore center. The load split between the two bores is symmetric, with 50 percent of the total applied load assigned to each arm. The primary deflection metric for this task is the average displacement magnitude over the cylindrical surface of each bore, and the task-level deflection metric is the maximum of those two bore-surface averages under each load case. The primary spreading metric is the change in y-direction distance between the two bore centers under load relative to the unloaded geometry. The bracket must withstand four static load cases defined through the bore-load abstraction: 1000 N downward pin shear load in negative z, 1000 N upward pin shear load in positive z, 400 N positive bore prying load in positive x, and 300 N positive bore prying load combined with 250 N upward pin load. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. Assume machined single-body manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum average bore-surface deflection below 0.18 mm, maximum relative bore-center distance change below 0.12 mm, and maximum von Mises stress below 83.3 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            52
+          ],
+          "y": [
+            -28,
+            28
+          ],
+          "z": [
+            -42,
+            42
+          ]
+        },
+        "base_mount_plane": {
+          "x_mm": 0
+        },
+        "arm_length_mm": 52,
+        "nominal_reference_arm_spacing_mm": 32,
+        "nominal_reference_arm_spacing_note": "Reference quantity for baseline geometry and bore measurement-point placement; arm spacing may vary as long as bore coaxiality and other constraints are satisfied.",
+        "minimum_edge_distance_mm": 12,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 6,
+        "minimum_internal_radius_mm": 3,
+        "coaxial_hole_requirement": true,
+        "pin_hole_axis": "y",
+        "pin_hole_centerline_requirement": {
+          "x_mm": 40,
+          "z_mm": 0
+        },
+        "bore_region_definition": {
+          "left_bore_center_mm": {
+            "x": 40,
+            "y": -16,
+            "z": 0
+          },
+          "right_bore_center_mm": {
+            "x": 40,
+            "y": 16,
+            "z": 0
+          },
+          "bore_diameter_mm": 10
+        }
+      },
+      "interfaces": {
+        "web_base_mount": {
+          "role": "fixed_base",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 4,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": -18,
+                "z": 22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": 22
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "clevis_bore_regions": {
+          "type": "bore_load_region",
+          "located_on": "coaxial_bores_in_both_arms",
+          "left_bore_center_mm": {
+            "x": 40,
+            "y": -16,
+            "z": 0
+          },
+          "right_bore_center_mm": {
+            "x": 40,
+            "y": 16,
+            "z": 0
+          },
+          "bore_diameter_mm": 10
+        }
+      },
+      "deflection_measurement_definition": {
+        "type": "average_bore_surface_displacement",
+        "definition": "For each bore, compute the average displacement magnitude over the cylindrical bore surface. The task-level deflection metric is the maximum of the two bore-surface averages under each load case.",
+        "measurement_regions": [
+          {
+            "region": "left_bore_cylindrical_surface",
+            "center_mm": {
+              "x": 40,
+              "y": -16,
+              "z": 0
+            }
+          },
+          {
+            "region": "right_bore_cylindrical_surface",
+            "center_mm": {
+              "x": 40,
+              "y": 16,
+              "z": 0
+            }
+          }
+        ]
+      },
+      "arm_spreading_definition": {
+        "spreading_measurement_reference_type": "bore_center_distance_change",
+        "spreading_measurement_direction": "y",
+        "spreading_reference_points_definition": {
+          "left_bore_center_mm": {
+            "x": 40,
+            "y": -16,
+            "z": 0
+          },
+          "right_bore_center_mm": {
+            "x": 40,
+            "y": 16,
+            "z": 0
+          }
+        },
+        "definition": "Maximum relative bore-region spreading is defined as the increase in y-direction distance between the two bore centers under load relative to the unloaded geometry."
+      },
+      "pin_load_definition": {
+        "pin_load_abstraction": "concentrated_at_bore_center",
+        "bearing_arc_degrees": "not_applicable",
+        "loaded_bore_half_rule": "not_applicable_for_concentrated_abstraction",
+        "bearing_load_fraction_per_arm": [
+          0.5,
+          0.5
+        ],
+        "coaxial_hole_requirement": true,
+        "pin_hole_axis": "y",
+        "shear_configuration": "symmetric_double_shear_abstracted",
+        "definition": "The external component and physical pin are not modeled. Each load case is split equally between the two bore centers, with 50 percent of the total load applied at each bore center.",
+        "load_vector_precision_note": "For clevis tasks, per-arm forces are derived exactly from the total load vector and the stated load fractions. Evaluators should use the exact values as specified and should not apply independent rounding conventions."
+      },
+      "load_case_definition_note": "This U-B clevis task uses bore-loading abstractions rather than support-pad loading. Each listed total load is split according to bearing_load_fraction_per_arm before being applied at the two bore centers.",
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward pin shear load",
+          "total_force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1000
+          },
+          "per_arm_force_vector_N": {
+            "left_arm": {
+              "x": 0,
+              "y": 0,
+              "z": -500
+            },
+            "right_arm": {
+              "x": 0,
+              "y": 0,
+              "z": -500
+            }
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward pin shear load",
+          "total_force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 1000
+          },
+          "per_arm_force_vector_N": {
+            "left_arm": {
+              "x": 0,
+              "y": 0,
+              "z": 500
+            },
+            "right_arm": {
+              "x": 0,
+              "y": 0,
+              "z": 500
+            }
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Positive bore prying load",
+          "total_force_vector_N": {
+            "x": 400,
+            "y": 0,
+            "z": 0
+          },
+          "per_arm_force_vector_N": {
+            "left_arm": {
+              "x": 200,
+              "y": 0,
+              "z": 0
+            },
+            "right_arm": {
+              "x": 200,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Combined prying and upward pin load",
+          "total_force_vector_N": {
+            "x": 300,
+            "y": 0,
+            "z": 250
+          },
+          "per_arm_force_vector_N": {
+            "left_arm": {
+              "x": 150,
+              "y": 0,
+              "z": 125
+            },
+            "right_arm": {
+              "x": 150,
+              "y": 0,
+              "z": 125
+            }
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 250,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_average_bore_surface_deflection_mm": 0.18,
+        "max_relative_bore_center_distance_change_mm": 0.12,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 83.3
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "Base mounting-hole cylindrical surfaces at x = 0 are constrained in translation.",
+        "loaded_interface_assumption": "Loads are applied through the concentrated bore-center abstraction at the two bore centers using the specified per-arm load split.",
+        "physical_pin_modeled": false,
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "clearance_check_method": "No captured-component clearance constraint is used for this clevis task.",
+        "known_gap_note": "No +y pin-axis sliding load case is included in this Tier 1 clevis task. That mode is deferred to future tiers with richer pin/contact abstractions.",
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the revised clevis draft. Add a known-feasible baseline CAD/FEA design after the task spec is reviewed.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_average_bore_surface_deflection_mm_by_load_case": null,
+        "max_relative_bore_center_distance_change_mm_by_load_case": null
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "U-T1-04",
+      "task_version": "0.1.1-draft",
+      "name": "Off-center clevis pin-hole U-bracket, cosine bearing with unequal bore load split",
+      "family": "U-B",
+      "category": "static_structural",
+      "design_intent": "Off-center clevis U-bracket intended to test torsion-prone behavior, unequal arm demand, distributed bore loading, and sensitivity to bore alignment under asymmetric load split.",
+      "coordinate_system": {
+        "x": "arm direction, from the web/base toward the arm tips",
+        "y": "across the gap / pin axis, spanning between the two arms",
+        "z": "vertical upward"
+      },
+      "orientation_definition": {
+        "u_open_direction": "+x",
+        "definition": "The U-bracket is a fork-style clevis geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0. Two arms extend in +x, and a pin-connected component is represented by a distributed bearing abstraction acting on the coaxial bores in the two arms."
+      },
+      "fixed_base": "web_base_mount",
+      "loaded_interface_location": "clevis_bore_regions",
+      "arm_length_mm": 54,
+      "design_requirements_nl": "Design an off-center machined clevis U-bracket for supporting a pin-connected component between two parallel arms. The bracket is a fork-style geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0, and two arms extend in the positive x direction. Use a coordinate system in which x is the arm direction from the base toward the arm tips, y spans across the gap and is also the pin axis direction, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 54] mm, y in [-30, 30] mm, and z in [-44, 44] mm. The base/web is mounted to a rigid support plane at x = 0 and contains four 8.5 mm diameter mounting holes centered at (0, -18, -22) mm, (0, -18, 22) mm, (0, 18, -22) mm, and (0, 18, 22) mm. Two symmetric arms extend from the base in the positive x direction. Each arm contains a bore whose axis is parallel to y. The two bores must remain coaxial. The bore centerline is located at x = 41 mm and z = 0 mm. The nominal reference arm spacing is 34 mm, and the nominal bore-center y coordinates are -17 mm and 17 mm. The bores have diameter 10 mm. For this asymmetric clevis task, the physical pin and attached component are not modeled explicitly. Instead, use a cosine-bearing 180 degree abstraction on each bore. The load split between the two bores is intentionally unequal, with 65 percent of the total applied load assigned to the left arm bore and 35 percent assigned to the right arm bore. The loaded 180 degree arc for each load case is centered opposite to the applied per-arm force vector for that arm. The primary deflection metric for this task is the average displacement magnitude over the cylindrical surface of each bore, and the task-level deflection metric is the maximum of those two bore-surface averages under each load case. The primary spreading metric is the change in y-direction distance between the two bore centers under load relative to the unloaded geometry. The bracket must withstand four static load cases defined through the bore-loading abstraction: 1100 N downward pin shear load in negative z, 700 N upward pin shear load in positive z, 500 N positive bore prying load in positive x, and 350 N positive bore prying load combined with 300 N upward pin load. Use ASTM A572 Grade 50 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 345 MPa, and density 7850 kg/m^3. Assume machined single-body manufacturing with minimum thickness 6 mm, minimum internal fillet radius 3 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum average bore-surface deflection below 0.16 mm, maximum relative bore-center distance change below 0.10 mm, and maximum von Mises stress below 115.0 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            54
+          ],
+          "y": [
+            -30,
+            30
+          ],
+          "z": [
+            -44,
+            44
+          ]
+        },
+        "base_mount_plane": {
+          "x_mm": 0
+        },
+        "arm_length_mm": 54,
+        "nominal_reference_arm_spacing_mm": 34,
+        "nominal_reference_arm_spacing_note": "Reference quantity for baseline geometry and bore measurement-point placement; arm spacing may vary as long as bore coaxiality and other constraints are satisfied.",
+        "minimum_edge_distance_mm": 12,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 6,
+        "minimum_internal_radius_mm": 3,
+        "coaxial_hole_requirement": true,
+        "pin_hole_axis": "y",
+        "pin_hole_centerline_requirement": {
+          "x_mm": 41,
+          "z_mm": 0
+        },
+        "bore_region_definition": {
+          "left_bore_center_mm": {
+            "x": 41,
+            "y": -17,
+            "z": 0
+          },
+          "right_bore_center_mm": {
+            "x": 41,
+            "y": 17,
+            "z": 0
+          },
+          "bore_diameter_mm": 10
+        }
+      },
+      "interfaces": {
+        "web_base_mount": {
+          "role": "fixed_base",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 4,
+            "hole_style": "straight",
+            "hole_diameter_mm": 8.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": -18,
+                "z": 22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": 22
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "clevis_bore_regions": {
+          "type": "bore_load_region",
+          "located_on": "coaxial_bores_in_both_arms",
+          "left_bore_center_mm": {
+            "x": 41,
+            "y": -17,
+            "z": 0
+          },
+          "right_bore_center_mm": {
+            "x": 41,
+            "y": 17,
+            "z": 0
+          },
+          "bore_diameter_mm": 10
+        }
+      },
+      "deflection_measurement_definition": {
+        "type": "average_bore_surface_displacement",
+        "definition": "For each bore, compute the average displacement magnitude over the cylindrical bore surface. The task-level deflection metric is the maximum of the two bore-surface averages under each load case.",
+        "measurement_regions": [
+          {
+            "region": "left_bore_cylindrical_surface",
+            "center_mm": {
+              "x": 41,
+              "y": -17,
+              "z": 0
+            }
+          },
+          {
+            "region": "right_bore_cylindrical_surface",
+            "center_mm": {
+              "x": 41,
+              "y": 17,
+              "z": 0
+            }
+          }
+        ]
+      },
+      "arm_spreading_definition": {
+        "spreading_measurement_reference_type": "bore_center_distance_change",
+        "spreading_measurement_direction": "y",
+        "spreading_reference_points_definition": {
+          "left_bore_center_mm": {
+            "x": 41,
+            "y": -17,
+            "z": 0
+          },
+          "right_bore_center_mm": {
+            "x": 41,
+            "y": 17,
+            "z": 0
+          }
+        },
+        "definition": "Maximum relative bore-region spreading is defined as the increase in y-direction distance between the two bore centers under load relative to the unloaded geometry."
+      },
+      "pin_load_definition": {
+        "pin_load_abstraction": "cosine_bearing_180deg",
+        "bearing_arc_degrees": 180,
+        "loaded_bore_half_rule": "For each load case, the loaded 180-degree arc on each bore is centered opposite to the applied per-arm force vector for that arm.",
+        "bearing_load_fraction_per_arm": [
+          0.65,
+          0.35
+        ],
+        "coaxial_hole_requirement": true,
+        "pin_hole_axis": "y",
+        "shear_configuration": "off_center_double_shear_abstracted",
+        "definition": "The external component and physical pin are not modeled. Each load case is distributed over 180 degrees of each bore using a cosine bearing distribution. The total applied load is split unequally between the two bores according to bearing_load_fraction_per_arm.",
+        "load_vector_precision_note": "For clevis tasks, per-arm forces are derived exactly from the total load vector and the stated load fractions. Evaluators should use the exact values as specified and should not apply independent rounding conventions."
+      },
+      "load_case_definition_note": "This U-B clevis task uses distributed bore-loading abstractions rather than support-pad loading. Each listed total load is distributed over the two bores using the specified unequal load split and cosine-bearing 180 degree abstraction.",
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward pin shear load",
+          "total_force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -1100
+          },
+          "per_arm_force_vector_N": {
+            "left_arm": {
+              "x": 0,
+              "y": 0,
+              "z": -715
+            },
+            "right_arm": {
+              "x": 0,
+              "y": 0,
+              "z": -385
+            }
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward pin shear load",
+          "total_force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 700
+          },
+          "per_arm_force_vector_N": {
+            "left_arm": {
+              "x": 0,
+              "y": 0,
+              "z": 455
+            },
+            "right_arm": {
+              "x": 0,
+              "y": 0,
+              "z": 245
+            }
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Positive bore prying load",
+          "total_force_vector_N": {
+            "x": 500,
+            "y": 0,
+            "z": 0
+          },
+          "per_arm_force_vector_N": {
+            "left_arm": {
+              "x": 325,
+              "y": 0,
+              "z": 0
+            },
+            "right_arm": {
+              "x": 175,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Combined prying and upward pin load",
+          "total_force_vector_N": {
+            "x": 350,
+            "y": 0,
+            "z": 300
+          },
+          "per_arm_force_vector_N": {
+            "left_arm": {
+              "x": 227.5,
+              "y": 0,
+              "z": 195
+            },
+            "right_arm": {
+              "x": 122.5,
+              "y": 0,
+              "z": 105
+            }
+          }
+        }
+      ],
+      "material": {
+        "name": "ASTM A572 Grade 50 steel",
+        "elastic_modulus_GPa": 200,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 345,
+        "density_kg_m3": 7850
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 6,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_average_bore_surface_deflection_mm": 0.16,
+        "max_relative_bore_center_distance_change_mm": 0.1,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 115.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "Base mounting-hole cylindrical surfaces at x = 0 are constrained in translation.",
+        "loaded_interface_assumption": "Loads are applied through the cosine-bearing 180 degree abstraction on the two bore surfaces using the specified unequal per-arm load split.",
+        "physical_pin_modeled": false,
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "clearance_check_method": "No captured-component clearance constraint is used for this clevis task.",
+        "known_gap_note": "No +y pin-axis sliding load case is included in this Tier 1 clevis task. That mode is deferred to future tiers with richer pin/contact abstractions.",
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the revised off-center clevis draft. Add a known-feasible baseline CAD/FEA design after the task spec is reviewed.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_average_bore_surface_deflection_mm_by_load_case": null,
+        "max_relative_bore_center_distance_change_mm_by_load_case": null
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "U-T1-05",
+      "task_version": "0.1-draft",
+      "name": "Aluminum machined support U-bracket, stiffness-dominated",
+      "family": "U-A",
+      "category": "static_structural",
+      "design_intent": "Low-modulus support/capture U-bracket with intentionally tight arm-spreading constraint so stiffness, not stress, is the primary governing behavior.",
+      "coordinate_system": {
+        "x": "arm direction, from the web/base toward the arm tips",
+        "y": "across the gap between the two arms",
+        "z": "vertical upward"
+      },
+      "orientation_definition": {
+        "u_open_direction": "+x",
+        "definition": "The U-bracket is a fork-style geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0. Two arms extend in +x, and the captured component sits between the arms and is supported by an internal support shelf between them."
+      },
+      "fixed_base": "web_base_mount",
+      "loaded_interface_location": "support_pad_on_internal_shelf",
+      "arm_length_mm": 58,
+      "design_requirements_nl": "Design a machined aluminum U-bracket for supporting and capturing a rectangular inserted component between two parallel arms, with the task intentionally calibrated to be stiffness-dominated. The bracket is a fork-style geometry that opens in the positive x direction. The web/base is the mounting plate at x = 0, and two arms extend in the positive x direction. Use a coordinate system in which x is the arm direction from the base toward the arm tips, y spans across the gap between the two arms, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 58] mm, y in [-28, 28] mm, and z in [-42, 42] mm. The base/web is mounted to a rigid support plane at x = 0 and contains four 6.6 mm diameter mounting holes centered at (0, -18, -22) mm, (0, -18, 22) mm, (0, 18, -22) mm, and (0, 18, 22) mm. Two symmetric arms extend from the base in the positive x direction. The inner faces of the two arms define a capture zone intended to accommodate a rectangular inserted component with envelope dimensions 42 mm in x, 24 mm in y, and 28 mm in z. The inserted component is not modeled explicitly in structural analysis, but the bracket geometry must preserve at least 2.0 mm unloaded clearance and at least 1.6 mm loaded clearance around the component within the defined capture zone. The internal support shelf is the floor of the channel between the two arms, and the top surface of this shelf is fixed at z = 0 for this task. The support/load interface is a flat rectangular pad located on the top surface of the internal support shelf between the arms, centered at (22, 0, 0) mm with size 30 mm in x by 18 mm in y. Apply each service load as a distributed load over this support pad with equivalent resultant passing through the pad center. The bracket must withstand five static load cases: 650 N downward in negative z, 300 N upward in positive z, 250 N lateral load in positive y, 250 N lateral load in negative y, and 400 N extraction load in positive x. Use 6061-T6 aluminum with elastic modulus 69 GPa, Poisson ratio 0.33, yield strength 276 MPa, and density 2700 kg/m^3. Assume machined single-body manufacturing with minimum thickness 4 mm, minimum internal fillet radius 3 mm, and no undercuts. The objective is to minimize bracket mass while keeping maximum displacement at the support pad below 0.12 mm, maximum relative arm spreading below 0.08 mm, and maximum von Mises stress below 92.0 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            58
+          ],
+          "y": [
+            -28,
+            28
+          ],
+          "z": [
+            -42,
+            42
+          ]
+        },
+        "base_mount_plane": {
+          "x_mm": 0
+        },
+        "arm_length_mm": 58,
+        "nominal_reference_arm_spacing_mm": 30,
+        "nominal_reference_arm_spacing_note": "Reference quantity for baseline geometry and measurement-point placement; clearance constraints, not arm spacing itself, are the hard functional requirements.",
+        "minimum_edge_distance_mm": 10,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 4,
+        "minimum_internal_radius_mm": 3,
+        "captured_component_envelope_mm": {
+          "x": 42,
+          "y": 24,
+          "z": 28
+        },
+        "capture_zone_mm": {
+          "x_range": [
+            8,
+            50
+          ],
+          "y_definition": "bounded_by_arm_inner_faces",
+          "z_range": [
+            -14,
+            14
+          ]
+        },
+        "internal_support_shelf_definition": {
+          "role": "floor_of_channel_between_arms",
+          "top_surface_z_mm": 0,
+          "definition": "The internal support shelf is the floor of the channel between the two arms. Its top surface is fixed at z = 0 for this task."
+        }
+      },
+      "interfaces": {
+        "web_base_mount": {
+          "role": "fixed_base",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 4,
+            "hole_style": "straight",
+            "hole_diameter_mm": 6.6,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": -18,
+                "z": 22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": -22
+              },
+              {
+                "x": 0,
+                "y": 18,
+                "z": 22
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "support_pad_on_internal_shelf": {
+          "type": "flat_pad",
+          "located_on": "top_surface_of_internal_support_shelf_between_arms",
+          "center_mm": {
+            "x": 22,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "x": 30,
+            "y": 18
+          }
+        }
+      },
+      "deflection_measurement_definition": {
+        "type": "support_pad_displacement",
+        "definition": "Report the maximum displacement magnitude over the support pad surface under each load case."
+      },
+      "arm_spreading_definition": {
+        "spreading_measurement_reference_type": "arm_tip_inner_face_centroid",
+        "spreading_measurement_direction": "y",
+        "spreading_reference_points_definition": {
+          "left_arm_reference_point_mm": {
+            "x": 58,
+            "y": -15,
+            "z": 0
+          },
+          "right_arm_reference_point_mm": {
+            "x": 58,
+            "y": 15,
+            "z": 0
+          }
+        },
+        "definition": "Maximum relative arm spreading is defined as the increase in y-direction distance between the two arm-tip inner-face reference points under load relative to the unloaded geometry."
+      },
+      "clearance_definition": {
+        "minimum_unloaded_clearance_mm": 2.0,
+        "minimum_loaded_clearance_mm": 1.6,
+        "definition": "Clearance is defined as the minimum distance between the inner faces of the two arms within the capture zone minus the captured component envelope width in the y direction."
+      },
+      "load_case_definition_note": "This U-A support/capture task is calibrated to be stiffness-dominated: the spreading and support-pad deflection constraints are expected to bind before the stress limit.",
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward support load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -650
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward retention load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 300
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Positive lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 250,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Negative lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": -250,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC5",
+          "description": "Positive extraction load",
+          "force_vector_N": {
+            "x": 400,
+            "y": 0,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "6061-T6 aluminum",
+        "elastic_modulus_GPa": 69,
+        "poisson_ratio": 0.33,
+        "yield_strength_MPa": 276,
+        "density_kg_m3": 2700
+      },
+      "manufacturing": {
+        "process": "machined_single_body",
+        "rules": {
+          "single_body_required": true,
+          "minimum_thickness_mm": 4,
+          "minimum_internal_radius_mm": 3,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_support_pad_deflection_mm": 0.12,
+        "max_relative_arm_tip_displacement_mm": 0.08,
+        "minimum_unloaded_clearance_mm": 2.0,
+        "minimum_loaded_clearance_mm": 1.6,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 92.0
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "Base mounting-hole cylindrical surfaces at x = 0 are constrained in translation.",
+        "loaded_interface_assumption": "Loads are applied as distributed loads over the support pad on the top surface of the internal support shelf between the arms.",
+        "captured_component_modeled": false,
+        "clearance_check_method": "Geometric clearance is checked directly from bracket geometry in the unloaded state and from deformed arm positions within the capture zone under load.",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "solid_body_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the stiffness-dominated support draft. Add a known-feasible baseline CAD/FEA design after the task spec is reviewed.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_support_pad_deflection_mm_by_load_case": null,
+        "max_relative_arm_tip_displacement_mm_by_load_case": null,
+        "minimum_loaded_clearance_mm_by_load_case": null
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    },
+    {
+      "id": "U-T1-06",
+      "task_version": "0.1-draft",
+      "name": "Sheet-metal constant-thickness channel U-bracket",
+      "family": "U-C",
+      "category": "static_structural",
+      "design_intent": "Constant-thickness bent channel U-bracket that tests thin-wall arm behavior, bend-radius constraints, and active arm-to-base proportion tradeoffs under spreading-sensitive loads.",
+      "coordinate_system": {
+        "x": "arm direction, from the web/base toward the arm tips",
+        "y": "across the gap between the two arms",
+        "z": "vertical upward"
+      },
+      "orientation_definition": {
+        "u_open_direction": "+x",
+        "definition": "The U-bracket is a bent sheet-metal channel geometry that opens in the positive x direction. The web is the channel floor and mounting region at x = 0, and two constant-thickness arms extend in +x from the two identical bends."
+      },
+      "fixed_base": "web_base_mount",
+      "loaded_interface_location": "load_pad_on_channel_floor",
+      "arm_length_mm": 46,
+      "design_requirements_nl": "Design a bent sheet-metal channel U-bracket formed from a single constant-thickness sheet. The bracket is a channel geometry that opens in the positive x direction. The web is the channel floor and mounting region at x = 0, and two arms extend in the positive x direction from identical bends. Use a coordinate system in which x is the arm direction from the web toward the arm tips, y spans across the gap between the two arms, and z is vertical upward. The bracket body must fit inside an axis-aligned bounding box with x in [0, 46] mm, y in [-24, 24] mm, and z in [-36, 36] mm. The web/channel floor is mounted to a rigid support plane at x = 0 and contains four 5.5 mm diameter mounting holes centered at (0, -16, -18) mm, (0, -16, 18) mm, (0, 16, -18) mm, and (0, 16, 18) mm. Two constant-thickness arms extend from the web in the positive x direction. The inner faces of the two arms define a capture zone intended to accommodate a rectangular inserted component with envelope dimensions 34 mm in x, 20 mm in y, and 22 mm in z. The inserted component is not modeled explicitly in structural analysis, but the bracket geometry must preserve at least 1.5 mm unloaded clearance and at least 0.8 mm loaded clearance around the component within the defined capture zone. The load interface is a flat rectangular pad located on the inner face of the channel floor between the two arms, centered at (16, 0, 0) mm with size 24 mm in x by 14 mm in y. Apply each service load as a distributed load over this pad with equivalent resultant passing through the pad center. The bracket must withstand five static load cases: 900 N downward in negative z, 400 N upward in positive z, 300 N lateral load in positive y, 300 N lateral load in negative y, and 450 N extraction load in positive x. Use stainless steel 304 with elastic modulus 193 GPa, Poisson ratio 0.29, yield strength 215 MPa, and density 8000 kg/m^3. Assume formed-sheet manufacturing as a single constant-thickness body with minimum sheet thickness 4 mm, minimum bend radius 4 mm, and no welded reinforcements or undercuts. The effective straight arm length should be interpreted after the bend region, so the design must account for bend geometry within the stated envelope. The objective is to minimize bracket mass while keeping maximum displacement at the load pad below 0.22 mm, maximum relative arm spreading below 0.14 mm, and maximum von Mises stress below 71.7 MPa under every load case.",
+      "geometry_constraints": {
+        "envelope_ranges_mm": {
+          "x": [
+            0,
+            46
+          ],
+          "y": [
+            -24,
+            24
+          ],
+          "z": [
+            -36,
+            36
+          ]
+        },
+        "base_mount_plane": {
+          "x_mm": 0
+        },
+        "arm_length_mm": 46,
+        "nominal_reference_arm_spacing_mm": 25,
+        "nominal_reference_arm_spacing_note": "Reference quantity for baseline geometry and measurement-point placement; clearance constraints, not arm spacing itself, are the hard functional requirements.",
+        "minimum_edge_distance_mm": 8,
+        "minimum_edge_distance_reference": "hole_center",
+        "minimum_thickness_mm": 4,
+        "minimum_internal_radius_mm": 4,
+        "captured_component_envelope_mm": {
+          "x": 34,
+          "y": 20,
+          "z": 22
+        },
+        "capture_zone_mm": {
+          "x_range": [
+            6,
+            40
+          ],
+          "y_definition": "bounded_by_arm_inner_faces",
+          "z_range": [
+            -11,
+            11
+          ]
+        },
+        "channel_floor_definition": {
+          "role": "continuous_constant_thickness_web_floor",
+          "inner_face_z_reference_mm": 0,
+          "definition": "For this sheet-metal task, the load pad is applied directly to the inner face of the channel floor. No separate internal shelf feature is assumed."
+        },
+        "arm_length_semantics_note": "For this sheet-metal task, arm_length_mm refers to the total x-direction envelope extent from the mounted web plane to the furthest arm-tip extent, including web and bend projection. It is not the straight developed leg length after the bend."
+      },
+      "interfaces": {
+        "web_base_mount": {
+          "role": "fixed_base",
+          "substrate": "rigid mounting plane",
+          "fastener_pattern": {
+            "count": 4,
+            "hole_style": "straight",
+            "hole_diameter_mm": 5.5,
+            "locations_mm": [
+              {
+                "x": 0,
+                "y": -16,
+                "z": -18
+              },
+              {
+                "x": 0,
+                "y": -16,
+                "z": 18
+              },
+              {
+                "x": 0,
+                "y": 16,
+                "z": -18
+              },
+              {
+                "x": 0,
+                "y": 16,
+                "z": 18
+              }
+            ],
+            "hole_pattern_centroid_mm": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "load_pad_on_channel_floor": {
+          "type": "flat_pad",
+          "located_on": "inner_face_of_channel_floor_between_arms",
+          "center_mm": {
+            "x": 16,
+            "y": 0,
+            "z": 0
+          },
+          "size_mm": {
+            "x": 24,
+            "y": 14
+          }
+        }
+      },
+      "deflection_measurement_definition": {
+        "type": "support_pad_displacement",
+        "definition": "Report the maximum displacement magnitude over the load pad surface under each load case."
+      },
+      "arm_spreading_definition": {
+        "spreading_measurement_reference_type": "arm_tip_inner_face_centroid",
+        "spreading_measurement_direction": "y",
+        "spreading_reference_points_definition": {
+          "left_arm_reference_point_mm": {
+            "x": 46,
+            "y": -12.5,
+            "z": 0
+          },
+          "right_arm_reference_point_mm": {
+            "x": 46,
+            "y": 12.5,
+            "z": 0
+          }
+        },
+        "definition": "Maximum relative arm spreading is defined as the increase in y-direction distance between the two arm-tip inner-face reference points under load relative to the unloaded geometry."
+      },
+      "clearance_definition": {
+        "minimum_unloaded_clearance_mm": 1.5,
+        "minimum_loaded_clearance_mm": 0.8,
+        "definition": "Clearance is defined as the minimum distance between the inner faces of the two arms within the capture zone minus the captured component envelope width in the y direction."
+      },
+      "load_case_definition_note": "This U-C sheet-metal task uses the channel floor as the load interface rather than a discrete internal shelf. Spreading must remain active despite constant-thickness and bend-radius constraints.",
+      "load_cases": [
+        {
+          "id": "LC1",
+          "description": "Downward support load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": -900
+          }
+        },
+        {
+          "id": "LC2",
+          "description": "Upward retention load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 0,
+            "z": 400
+          }
+        },
+        {
+          "id": "LC3",
+          "description": "Positive lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": 300,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC4",
+          "description": "Negative lateral side load",
+          "force_vector_N": {
+            "x": 0,
+            "y": -300,
+            "z": 0
+          }
+        },
+        {
+          "id": "LC5",
+          "description": "Positive extraction load",
+          "force_vector_N": {
+            "x": 450,
+            "y": 0,
+            "z": 0
+          }
+        }
+      ],
+      "material": {
+        "name": "Stainless steel 304",
+        "elastic_modulus_GPa": 193,
+        "poisson_ratio": 0.29,
+        "yield_strength_MPa": 215,
+        "density_kg_m3": 8000
+      },
+      "manufacturing": {
+        "process": "formed_sheet",
+        "rules": {
+          "single_body_required": true,
+          "constant_thickness_required": true,
+          "minimum_sheet_thickness_mm": 4,
+          "minimum_bend_radius_mm": 4,
+          "welded_reinforcements_allowed": false,
+          "undercuts_allowed": false
+        }
+      },
+      "constraints": {
+        "max_support_pad_deflection_mm": 0.22,
+        "max_relative_arm_tip_displacement_mm": 0.14,
+        "minimum_unloaded_clearance_mm": 1.5,
+        "minimum_loaded_clearance_mm": 0.8,
+        "minimum_safety_factor": 3.0,
+        "max_von_mises_MPa": 71.7
+      },
+      "evaluation_assumptions": {
+        "mounting_boundaries": "Web mounting-hole cylindrical surfaces at x = 0 are constrained in translation.",
+        "loaded_interface_assumption": "Loads are applied as distributed loads over the channel-floor load pad.",
+        "captured_component_modeled": false,
+        "clearance_check_method": "Geometric clearance is checked directly from bracket geometry in the unloaded state and from deformed arm positions within the capture zone under load.",
+        "fastener_preload_modeled": false,
+        "contact_nonlinearity_modeled": false,
+        "mesh_guidance_family": "sheet_metal_tasks"
+      },
+      "objective": {
+        "primary": "minimize_mass"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending",
+        "notes": "Reference solution not yet attached in the first sheet-metal channel draft. Add a known-feasible baseline CAD/FEA design after the task spec is reviewed.",
+        "cad_artifact": null,
+        "mass_kg": null,
+        "max_von_mises_MPa_by_load_case": null,
+        "max_support_pad_deflection_mm_by_load_case": null,
+        "max_relative_arm_tip_displacement_mm_by_load_case": null,
+        "minimum_loaded_clearance_mm_by_load_case": null
+      },
+      "feasibility_check": {
+        "status": "pending",
+        "notes": "Awaiting first baseline CAD/FEA geometry."
+      }
+    }
+  ]
+}
