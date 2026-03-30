@@ -1,0 +1,1129 @@
+{
+  "file_id": "flat_bracket_tasks_F-T1-01_to_F-T1-06_v0_2_4",
+  "suite_id": "flat_bracket_suite_v0_2_1",
+  "suite_name": "Flat Bracket Benchmark Suite",
+  "version": "0.2.4",
+  "natural_language_description_requirement": "Each natural_language_task_description must be self-contained and must restate all essential numerical task information needed by an AI design agent, including material, envelope, thickness policy, interface geometry, loading, supports, displacement measurement location, major manufacturing constraints, and objective.",
+  "included_tasks": [
+    "F-T1-01",
+    "F-T1-02",
+    "F-T1-03",
+    "F-T1-04",
+    "F-T1-05",
+    "F-T1-06"
+  ],
+  "global_conventions": {
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "mass": "kg",
+      "density": "kg/m^3"
+    },
+    "coordinate_system": {
+      "definition": "The bracket midplane lies in the x-y plane. The z direction is the thickness direction.",
+      "axis_meanings": {
+        "x": "primary support-to-load direction in plane",
+        "y": "transverse in-plane direction",
+        "z": "plate thickness direction"
+      },
+      "plate_positioning_note": "For all flat-bracket tasks in this file, the plate midplane is fixed at z = 0. The z-range of the envelope defines the plate thickness extent only and is not an independent design degree of freedom."
+    },
+    "evaluation_method": {
+      "style": "linear-elastic bracket-level FEA",
+      "primary_metrics": [
+        "mass",
+        "maximum von Mises stress",
+        "loaded-interface displacement magnitude"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "F-T1-01",
+      "task_name": "Axial Offset-Hole Tie Plate",
+      "suite_id": "flat_bracket_suite_v0_2_1",
+      "family_code": "F-T1",
+      "version": "0.2.4",
+      "task_class": "flat_bracket",
+      "purpose": "Baseline in-plane flat-plate task that avoids trivial symmetry by introducing a non-straight axial load path.",
+      "natural_language_task_description": "Design a single-piece flat bracket made from ASTM A36 steel with Young’s modulus 200 GPa, Poisson’s ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. The bracket must be a single constant-thickness plate of thickness 8.0 mm lying in the x-y plane, with its midplane at z = 0, and it must fit inside the bounding envelope x in [0, 160] mm, y in [-32, 32] mm, z in [-4, 4] mm. The bracket connects two required end mounting regions. On the left side, there are two required support holes of diameter 8.5 mm centered at (20, -16, 0) mm and (20, 16, 0) mm, and all cylindrical surfaces of these two holes are fixed in translation. On the right side, there are two required loaded holes of diameter 8.5 mm centered at (138, -6, 0) mm and (138, 26, 0) mm. A total in-plane load of 1600 N in the +x direction is applied through the two right-side holes as distributed cylindrical-surface loads, split equally as 800 N per hole. You may change the 2D outer profile of the bracket, but all four holes must remain fixed in size and position, and the bracket must remain a single flat plate with no bends, no ribs, no welded stiffeners, no slots, and no cutouts. The minimum edge distance from any hole edge to the outer boundary is 8.0 mm. The minimum ligament width between any two hole edges or between a hole edge and the outer boundary is 10.0 mm. The minimum internal radius is 4.0 mm, the minimum external corner radius is 2.0 mm, and the minimum feature size is 4.0 mm. The maximum allowable von Mises stress is 170 MPa. The displacement magnitude at the centroid of the right-side connection pattern, located at (138, 10, 0) mm, must not exceed 0.30 mm. Minimize mass while satisfying all geometric, manufacturing, stress, and displacement constraints.",
+      "loading_regime": "in_plane_axial",
+      "mechanics_focus": [
+        "net section sizing",
+        "bearing near holes",
+        "ligament sizing",
+        "mildly non-collinear load-path shaping"
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 170.0,
+        "stress_allowable_note": "The allowable stress is set to keep the baseline task profile-sensitive while remaining simple enough to function as a sanity-check benchmark."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "candidate_processes": [
+          "laser cutting",
+          "waterjet cutting",
+          "machining from plate"
+        ],
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "left_hole_diameters": "fixed",
+          "left_hole_centers": "fixed",
+          "right_hole_diameters": "fixed",
+          "right_hole_centers": "fixed",
+          "cutouts": "forbidden",
+          "slots": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 160.0,
+          "y_min": -32.0,
+          "y_max": 32.0,
+          "z_min": -4.0,
+          "z_max": 4.0
+        },
+        "plate_thickness_mm": 8.0,
+        "left_connection_region": {
+          "description": "Two required support holes define the left mounting interface.",
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [20.0, -16.0, 0.0],
+            [20.0, 16.0, 0.0]
+          ],
+          "pattern_centroid_mm": [20.0, 0.0, 0.0]
+        },
+        "right_connection_region": {
+          "description": "Two required loaded holes define the right connection interface. The pattern is offset in y relative to the left pattern, creating a non-straight in-plane load path.",
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [138.0, -6.0, 0.0],
+            [138.0, 26.0, 0.0]
+          ],
+          "pattern_centroid_mm": [138.0, 10.0, 0.0],
+          "offset_relative_to_left_centroid_mm": {
+            "delta_x": 118.0,
+            "delta_y": 10.0
+          }
+        },
+        "initial_reference_profile_note": "The benchmark does not require a specific starting profile. Any single connected 2D plate profile satisfying all interface-preservation and manufacturability rules is allowed."
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "All cylindrical surfaces of the two left support holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ],
+          "rotation_note": "No separate rotational degrees of freedom exist in the solid model."
+        },
+        "load_introduction_type": "distributed_hole_surface",
+        "load_definition": {
+          "description": "The total in-plane load is split equally and applied through the two right-side holes as distributed cylindrical-surface loads.",
+          "total_force_vector_N": [
+            1600.0,
+            0.0,
+            0.0
+          ],
+          "force_per_loaded_hole_N": [
+            800.0,
+            0.0,
+            0.0
+          ],
+          "application_region": "full cylindrical surface of each right-side loaded hole",
+          "note": "Because the right-side hole pattern is offset in y relative to the left pattern, the design should follow a mildly non-collinear in-plane load path."
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 170.0,
+          "displacement_constraint": {
+            "measurement_type": "centroid_of_right_connection_pattern",
+            "maximum_displacement_mm": 0.30,
+            "measurement_note": "Displacement magnitude is evaluated at the centroid of the two right-side loaded holes."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "edge_distance_definition": "Minimum distance from hole edge to outer profile boundary.",
+          "edge_distance_convention_note": "In the flat bracket suite, edge distance is measured from hole edge to outer boundary. This differs from the hole-center-based convention used in the L, Z, and U bracket suites.",
+          "minimum_ligament_width_mm": 10.0,
+          "ligament_definition": "Minimum material width between any two hole edges or between a hole edge and the outer boundary where applicable.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "minimum_feature_size_mm": 4.0,
+          "single_connected_body_required": true,
+          "self_intersection_forbidden": true,
+          "cutouts_forbidden": true,
+          "slots_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "all_required_holes_must_be_preserved": true,
+          "left_hole_positions_fixed": true,
+          "left_hole_diameters_fixed": true,
+          "right_hole_positions_fixed": true,
+          "right_hole_diameters_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass",
+        "secondary_objective_note": "Among designs of similar mass, lower peak stress and lower right-interface displacement are preferred, but only mass is the formal optimization objective once all constraints are satisfied."
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at the centroid of the right-side connection pattern must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "right_connection_pattern_centroid_displacement_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Left support holes are idealized as fixed cylindrical constraints.",
+          "The right-side distributed hole-surface loads are Tier 1 abstractions for bracket-level evaluation rather than detailed bolt-contact models."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "low",
+        "scientific_discrimination_value": "moderate",
+        "why_it_is_hard": [
+          "The hole-pattern offset prevents the task from collapsing to a trivial symmetric strip-design problem.",
+          "Because thickness is fixed and the benchmark forbids cutouts and slots, the solver must express structural reasoning through 2D boundary shaping alone.",
+          "The task is intentionally simpler than the eccentric and cutout tasks, so it functions as a clean baseline."
+        ]
+      },
+      "reference_solution_guidance": {
+        "non_binding_observations": [
+          "Good solutions usually preserve direct material flow between the two connection patterns while widening moderately around the holes.",
+          "A constant-width strip is likely feasible but mass-inefficient.",
+          "Smooth tapered transitions generally outperform abrupt shoulders between the two end regions."
+        ],
+        "not_part_of_formal_constraints": true
+      }
+    },
+    {
+      "task_id": "F-T1-02",
+      "task_name": "Cantilever Flat Mounting Plate with Transverse Load",
+      "suite_id": "flat_bracket_suite_v0_2_1",
+      "family_code": "F-T1",
+      "version": "0.2.4",
+      "task_class": "flat_bracket",
+      "purpose": "Out-of-plane bending task that tests thickness-sensitive stiffness reasoning in a constant-thickness planar bracket.",
+      "natural_language_task_description": "Design a single-piece flat mounting bracket made from ASTM A36 steel with Young’s modulus 200 GPa, Poisson’s ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. The bracket must lie in the x-y plane with midplane at z = 0 and must fit inside the bounding envelope x in [0, 150] mm, y in [-45, 45] mm, z in [-6, 6] mm. The bracket thickness is a design variable but must remain constant throughout the plate and must lie between 4.0 mm and 12.0 mm. On the left side, the bracket is mounted through four required support holes of diameter 8.5 mm centered at (18, -24, 0) mm, (18, 24, 0) mm, (48, -24, 0) mm, and (48, 24, 0) mm, and all cylindrical surfaces of these holes are fixed in translation. Near the opposite end, there is one required loaded hole of diameter 12.0 mm centered at (132, 0, 0) mm. A transverse load of 900 N in the -z direction is applied through this loaded hole using a remote point coupled to the hole with an RBE3-style distributing coupling. You may change the 2D outer profile and choose the thickness within the stated bounds, but the bracket must remain a single constant-thickness flat plate with no bends, no ribs, no welded stiffeners, no slots, and no cutouts. All required holes must remain fixed in size and position. The minimum edge distance from any hole edge to the outer boundary is 8.0 mm. The minimum ligament width between any two hole edges or between a hole edge and the outer boundary is 10.0 mm. The minimum internal radius is 4.0 mm, the minimum external corner radius is 2.0 mm, and the minimum feature size is 4.0 mm. The maximum allowable von Mises stress is 160 MPa. The displacement magnitude at the centroid of the loaded hole at (132, 0, 0) mm must not exceed 0.60 mm. Minimize mass while satisfying all thickness, geometric, manufacturing, stress, and displacement constraints.",
+      "loading_regime": "out_of_plane",
+      "mechanics_focus": [
+        "transverse plate bending",
+        "tip displacement control",
+        "thickness sensitivity",
+        "local reinforcement near loaded feature",
+        "profile-thickness tradeoff"
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 160.0,
+        "stress_allowable_note": "The allowable stress is set to keep the out-of-plane task stiffness-sensitive while remaining compatible with bracket-level linear-elastic evaluation."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "candidate_processes": [
+          "laser cutting",
+          "waterjet cutting",
+          "machining from plate"
+        ],
+        "design_variable_policy": {
+          "thickness": {
+            "type": "bounded_design_variable",
+            "min_mm": 4.0,
+            "max_mm": 12.0
+          },
+          "outer_profile": "designable",
+          "support_hole_diameters": "fixed",
+          "support_hole_centers": "fixed",
+          "loaded_hole_diameter": "fixed",
+          "loaded_hole_center": "fixed",
+          "cutouts": "forbidden",
+          "slots": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 150.0,
+          "y_min": -45.0,
+          "y_max": 45.0,
+          "z_min": -6.0,
+          "z_max": 6.0
+        },
+        "plate_thickness_bounds_mm": {
+          "min": 4.0,
+          "max": 12.0
+        },
+        "support_region": {
+          "description": "Four required mounting holes define the rigid support interface near the left side of the plate.",
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [18.0, -24.0, 0.0],
+            [18.0, 24.0, 0.0],
+            [48.0, -24.0, 0.0],
+            [48.0, 24.0, 0.0]
+          ],
+          "support_hole_pattern_centroid_mm": [33.0, 0.0, 0.0]
+        },
+        "loaded_feature": {
+          "description": "One required loaded hole introduces the transverse load through a remote coupled point.",
+          "hole_diameter_mm": 12.0,
+          "hole_center_mm": [132.0, 0.0, 0.0]
+        },
+        "initial_reference_profile_note": "The benchmark does not require a specific starting profile. Any single connected 2D plate profile satisfying all interface-preservation and manufacturability rules is allowed."
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "All cylindrical surfaces of the four support holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ],
+          "rotation_note": "No separate rotational degrees of freedom exist in the solid model."
+        },
+        "load_introduction_type": "remote_point_coupled_to_hole",
+        "load_definition": {
+          "description": "A transverse load is applied through a remote point coupled to the loaded hole.",
+          "total_force_vector_N": [
+            0.0,
+            0.0,
+            -900.0
+          ],
+          "application_region": "loaded hole via remote coupling",
+          "note": "The force acts normal to the plate, producing out-of-plane bending."
+        },
+        "coupling_definition": {
+          "coupling_type": "distributing_coupling_rbe3_style",
+          "coupling_note": "Use an RBE3-style distributing coupling rather than a rigid coupling. Evaluators should avoid reporting stress within one element layer of the coupling boundary."
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 160.0,
+          "displacement_constraint": {
+            "measurement_type": "centroid_of_loaded_hole",
+            "maximum_displacement_mm": 0.60,
+            "measurement_note": "Displacement magnitude is evaluated at the centroid of the loaded hole."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "edge_distance_definition": "Minimum distance from hole edge to outer profile boundary.",
+          "edge_distance_convention_note": "In the flat bracket suite, edge distance is measured from hole edge to outer boundary. This differs from the hole-center-based convention used in the L, Z, and U bracket suites.",
+          "minimum_ligament_width_mm": 10.0,
+          "ligament_definition": "Minimum material width between any two hole edges or between a hole edge and the outer boundary where applicable.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "minimum_feature_size_mm": 4.0,
+          "single_connected_body_required": true,
+          "self_intersection_forbidden": true,
+          "cutouts_forbidden": true,
+          "slots_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "all_required_holes_must_be_preserved": true,
+          "support_hole_positions_fixed": true,
+          "support_hole_diameters_fixed": true,
+          "loaded_hole_position_fixed": true,
+          "loaded_hole_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass",
+        "secondary_objective_note": "Among designs of similar mass, lower peak stress and lower loaded-hole displacement are preferred, but only mass is the formal optimization objective once all constraints are satisfied."
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design thickness must remain within the allowed bounds.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at the centroid of the loaded hole must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "plate_thickness_mm",
+          "max_von_mises_stress_MPa",
+          "loaded_hole_centroid_displacement_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Support holes are idealized as fixed cylindrical constraints.",
+          "The remote coupled load is a Tier 1 abstraction for bracket-level evaluation rather than a detailed fastener or contact model."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "high",
+        "scientific_discrimination_value": "high",
+        "why_it_is_hard": [
+          "Out-of-plane stiffness is highly sensitive to thickness, so thickness becomes a critical design variable rather than a trivial scalar.",
+          "The solver must balance thickness selection and 2D profile shaping rather than relying on only one of them.",
+          "The displacement limit is intended to be active enough that low-mass but overly flexible solutions fail."
+        ]
+      },
+      "reference_solution_guidance": {
+        "non_binding_observations": [
+          "Good solutions usually preserve width near the support-hole region and the loaded feature while tapering inefficient low-stress areas.",
+          "Thickness selection matters strongly because transverse stiffness scales nonlinearly with thickness.",
+          "Purely narrow strap-like geometries are likely to fail on displacement even if they pass stress."
+        ],
+        "not_part_of_formal_constraints": true
+      }
+    },
+    {
+      "task_id": "F-T1-03",
+      "task_name": "Eccentric In-Plane Loaded Plate",
+      "suite_id": "flat_bracket_suite_v0_2_1",
+      "family_code": "F-T1",
+      "version": "0.2.4",
+      "task_class": "flat_bracket",
+      "purpose": "Core discriminator task for asymmetric in-plane load-path reasoning under eccentricity-induced moment.",
+      "natural_language_task_description": "Design a single-piece flat bracket made from ASTM A36 steel with Young’s modulus 200 GPa, Poisson’s ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. The bracket must be a single constant-thickness plate of thickness 8.0 mm lying in the x-y plane, with its midplane at z = 0, and it must fit inside the bounding envelope x in [0, 150] mm, y in [-45, 45] mm, z in [-4, 4] mm. The bracket is mounted through four required support holes of diameter 8.5 mm centered at (20, -25, 0) mm, (20, 25, 0) mm, (50, -25, 0) mm, and (50, 25, 0) mm, and all cylindrical surfaces of these support holes are fixed in translation. The support-hole pattern centroid is at (35, 0, 0) mm. The bracket is loaded through one required loaded hole of diameter 12.0 mm centered at (130, 18, 0) mm. A total in-plane force of 2200 N in the -y direction is applied as a distributed load over the full cylindrical surface of the loaded hole. Because the loaded hole is offset in y from the support-hole centroid, the bracket experiences both direct in-plane loading and an in-plane moment. You may change the 2D outer profile, but all holes must remain fixed in size and position, and the bracket must remain a single flat plate with no bends, no ribs, no welded stiffeners, no slots, and no cutouts. The minimum edge distance from any hole edge to the outer boundary is 8.0 mm. The minimum ligament width between any two hole edges or between a hole edge and the outer boundary is 10.0 mm. The minimum internal radius is 4.0 mm, the minimum external corner radius is 2.0 mm, and the minimum feature size is 4.0 mm. The maximum allowable von Mises stress is 180 MPa. The displacement magnitude at the centroid of the loaded hole at (130, 18, 0) mm must not exceed 0.45 mm. Minimize mass while satisfying all geometric, manufacturing, stress, and displacement constraints.",
+      "loading_regime": "in_plane_eccentric",
+      "mechanics_focus": [
+        "eccentric in-plane load transfer",
+        "in-plane moment reaction",
+        "asymmetric stress field",
+        "support-region reinforcement",
+        "profile asymmetry"
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 180.0,
+        "stress_allowable_note": "The allowable stress is intentionally more permissive than highly conservative handbook-style static design allowables used in some earlier bracket-suite tasks. The goal here is to keep the benchmark sensitive to profile-shaping quality and mass minimization quality, rather than letting conservative oversizing dominate the solution space."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "candidate_processes": [
+          "laser cutting",
+          "waterjet cutting",
+          "machining from plate"
+        ],
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "support_hole_diameters": "fixed",
+          "support_hole_centers": "fixed",
+          "loaded_hole_diameter": "fixed",
+          "loaded_hole_center": "fixed",
+          "cutouts": "forbidden",
+          "slots": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 150.0,
+          "y_min": -45.0,
+          "y_max": 45.0,
+          "z_min": -4.0,
+          "z_max": 4.0
+        },
+        "plate_thickness_mm": 8.0,
+        "support_region": {
+          "description": "Four required mounting holes define the rigid support interface near the left side of the plate.",
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [20.0, -25.0, 0.0],
+            [20.0, 25.0, 0.0],
+            [50.0, -25.0, 0.0],
+            [50.0, 25.0, 0.0]
+          ],
+          "support_hole_pattern_centroid_mm": [35.0, 0.0, 0.0]
+        },
+        "loaded_feature": {
+          "description": "One required loaded hole applies the in-plane force. Its centerline is offset in y from the support-hole centroid, creating eccentricity and an in-plane moment.",
+          "hole_diameter_mm": 12.0,
+          "hole_center_mm": [130.0, 18.0, 0.0],
+          "eccentricity_relative_to_support_centroid_mm": {
+            "delta_x": 95.0,
+            "delta_y": 18.0
+          }
+        },
+        "initial_reference_profile_note": "The benchmark does not require a specific starting profile. Any single connected 2D plate profile satisfying all interface-preservation and manufacturability rules is allowed."
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "All cylindrical surfaces of the four support holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ],
+          "rotation_note": "No separate rotational degrees of freedom exist in the solid model."
+        },
+        "load_introduction_type": "distributed_hole_surface",
+        "load_definition": {
+          "description": "A total in-plane force is distributed uniformly around the cylindrical surface of the loaded hole.",
+          "total_force_vector_N": [
+            0.0,
+            -2200.0,
+            0.0
+          ],
+          "application_region": "full cylindrical surface of loaded hole",
+          "note": "The force lies in the plate plane. Because the loaded hole center is offset from the support-hole centroid, the bracket experiences both direct in-plane loading and an in-plane moment."
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 180.0,
+          "displacement_constraint": {
+            "measurement_type": "centroid_of_loaded_hole",
+            "maximum_displacement_mm": 0.45,
+            "measurement_note": "Displacement magnitude is evaluated at the centroid of the loaded hole."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "edge_distance_definition": "Minimum distance from hole edge to outer profile boundary.",
+          "edge_distance_convention_note": "In the flat bracket suite, edge distance is measured from hole edge to outer boundary. This differs from the hole-center-based convention used in the L, Z, and U bracket suites.",
+          "minimum_ligament_width_mm": 10.0,
+          "ligament_definition": "Minimum material width between any two hole edges or between a hole edge and the outer boundary where applicable.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "minimum_feature_size_mm": 4.0,
+          "single_connected_body_required": true,
+          "self_intersection_forbidden": true,
+          "cutouts_forbidden": true,
+          "slots_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "all_required_holes_must_be_preserved": true,
+          "support_hole_positions_fixed": true,
+          "support_hole_diameters_fixed": true,
+          "loaded_hole_position_fixed": true,
+          "loaded_hole_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass",
+        "secondary_objective_note": "Among designs of similar mass, lower peak stress and lower loaded-hole displacement are preferred, but only mass is the formal optimization objective once all constraints are satisfied."
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at the centroid of the loaded hole must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "loaded_hole_centroid_displacement_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Support holes are idealized as fixed cylindrical constraints.",
+          "The distributed hole-surface load is a Tier 1 abstraction for bracket-level evaluation rather than a detailed pin or bolt-contact model."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "high",
+        "why_it_is_hard": [
+          "A symmetric constant-width strap is inefficient because the in-plane moment from eccentricity creates an asymmetric stress field.",
+          "The best design must shape material toward the dominant stress path while maintaining sufficient support-region stiffness and manufacturable ligaments.",
+          "Because thickness is fixed, the solver cannot rely on trivial thickness scaling and must reason about 2D profile geometry."
+        ]
+      },
+      "reference_solution_guidance": {
+        "non_binding_observations": [
+          "Good solutions will usually widen the plate near the support-hole group and along the diagonal stress path toward the loaded hole.",
+          "A purely rectangular strip is expected to be mass-inefficient.",
+          "Large smooth transitions are generally favored over sharp neck-down regions."
+        ],
+        "not_part_of_formal_constraints": true
+      }
+    },
+    {
+      "task_id": "F-T1-04",
+      "task_name": "Slotted Adjustment Plate",
+      "suite_id": "flat_bracket_suite_v0_2_1",
+      "family_code": "F-T1",
+      "version": "0.2.4",
+      "task_class": "flat_bracket",
+      "purpose": "Adjustment-feature task that introduces slot-induced stress concentration and worst-case position reasoning while remaining within a flat-plate manufacturing model.",
+      "natural_language_task_description": "Design a single-piece flat adjustment bracket made from ASTM A36 steel with Young’s modulus 200 GPa, Poisson’s ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. The bracket must be a single constant-thickness plate of thickness 8.0 mm lying in the x-y plane, with its midplane at z = 0, and it must fit inside the bounding envelope x in [0, 145] mm, y in [-35, 35] mm, z in [-4, 4] mm. The bracket is mounted through two required support holes of diameter 8.5 mm centered at (18, -18, 0) mm and (18, 18, 0) mm, and all cylindrical surfaces of these holes are fixed in translation. The bracket must also include one required horizontal slot centered nominally at (112, 0, 0) mm, with slot length 28.0 mm, slot width 10.0 mm, and slot axis along the x direction. The slot is evaluated using a surrogate cylindrical fastener of diameter 8.0 mm at three positions: the near end at (98, 0, 0) mm, the center at (112, 0, 0) mm, and the far end at (126, 0, 0) mm. At each of these three positions, an in-plane load of 1800 N in the +x direction is applied through the cylindrical surface of the surrogate fastener, and the design must satisfy all constraints at all three positions. You may change the 2D outer profile, but the support holes and the slot geometry must remain fixed, and the bracket must remain a single flat plate with no bends, no ribs, no welded stiffeners, and no cutouts. The minimum edge distance from any support-hole edge or slot boundary to the outer boundary is 8.0 mm. The minimum ligament width between any two feature boundaries or between a feature boundary and the outer boundary is 10.0 mm. The minimum internal radius is 4.0 mm, the minimum external corner radius is 2.0 mm, and the minimum feature size is 4.0 mm. The maximum allowable von Mises stress is 165 MPa. The displacement magnitude at the centroid of the surrogate fastener must not exceed 0.35 mm at any of the three evaluated slot positions. Minimize mass while satisfying all geometric, manufacturing, stress, and displacement constraints at all three slot positions.",
+      "loading_regime": "in_plane_axial",
+      "mechanics_focus": [
+        "slot-end stress concentration",
+        "minimum ligament preservation",
+        "worst-case adjustment position",
+        "constraint-aware manufacturable shaping"
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 165.0,
+        "stress_allowable_note": "The allowable stress is calibrated to keep the slot task discriminative while acknowledging the local concentration associated with the required slot."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "candidate_processes": [
+          "laser cutting",
+          "waterjet cutting",
+          "machining from plate"
+        ],
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "support_hole_diameters": "fixed",
+          "support_hole_centers": "fixed",
+          "slot_geometry": "fixed_required_feature",
+          "loaded_fastener_region": "slot_feature",
+          "cutouts": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 145.0,
+          "y_min": -35.0,
+          "y_max": 35.0,
+          "z_min": -4.0,
+          "z_max": 4.0
+        },
+        "plate_thickness_mm": 8.0,
+        "support_region": {
+          "description": "Two required mounting holes define the rigid support interface near the left side of the plate.",
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [18.0, -18.0, 0.0],
+            [18.0, 18.0, 0.0]
+          ],
+          "support_hole_pattern_centroid_mm": [18.0, 0.0, 0.0]
+        },
+        "adjustment_slot": {
+          "description": "One required horizontal slot defines the adjustable loaded interface.",
+          "slot_width_mm": 10.0,
+          "slot_length_mm": 28.0,
+          "slot_center_nominal_mm": [112.0, 0.0, 0.0],
+          "slot_axis_direction": "x",
+          "surrogate_fastener_diameter_mm": 8.0,
+          "surrogate_fastener_note": "The slot is evaluated using a notional cylindrical fastener of 8.0 mm diameter placed at each of the three evaluation positions.",
+          "evaluation_positions_mm": {
+            "slot_start_end": [98.0, 0.0, 0.0],
+            "slot_center": [112.0, 0.0, 0.0],
+            "slot_far_end": [126.0, 0.0, 0.0]
+          }
+        },
+        "slot_feature_note": "The slot geometry itself is fixed by the task. The design freedom is the outer profile surrounding the slot and support region."
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "All cylindrical surfaces of the two support holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ],
+          "rotation_note": "No separate rotational degrees of freedom exist in the solid model."
+        },
+        "load_introduction_type": "distributed_hole_surface",
+        "load_definition": {
+          "description": "A total in-plane force is applied through a notional fastener location at the evaluated slot position.",
+          "total_force_vector_N": [
+            1800.0,
+            0.0,
+            0.0
+          ],
+          "application_region": "cylindrical surrogate fastener surface at each evaluated slot position",
+          "application_region_note": "The distributed load is applied on the cylindrical surface of the surrogate 8.0 mm diameter fastener at each evaluated slot position.",
+          "note": "The load is evaluated at three discrete slot positions: one at each slot end and one at the slot center. All three must pass."
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 165.0,
+          "displacement_constraint": {
+            "measurement_type": "evaluated_slot_fastener_centroid",
+            "maximum_displacement_mm": 0.35,
+            "measurement_note": "Displacement magnitude is evaluated at the notional fastener centroid for each of the three slot positions. All three positions must satisfy the limit."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "edge_distance_definition": "Minimum distance from any support-hole edge or slot boundary to the outer profile boundary.",
+          "edge_distance_convention_note": "In the flat bracket suite, edge distance is measured from feature edge to outer boundary. This differs from the hole-center-based convention used in the L, Z, and U bracket suites.",
+          "minimum_ligament_width_mm": 10.0,
+          "ligament_definition": "Minimum material width between any two feature boundaries or between a feature boundary and the outer boundary where applicable.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "minimum_feature_size_mm": 4.0,
+          "single_connected_body_required": true,
+          "self_intersection_forbidden": true,
+          "cutouts_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "all_required_support_holes_must_be_preserved": true,
+          "support_hole_positions_fixed": true,
+          "support_hole_diameters_fixed": true,
+          "slot_position_fixed": true,
+          "slot_length_fixed": true,
+          "slot_width_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass",
+        "secondary_objective_note": "Among designs of similar mass, lower peak stress and lower slot-interface displacement are preferred, but only mass is the formal optimization objective once all constraints are satisfied."
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "slot_evaluation_protocol": {
+          "evaluation_positions": [
+            "slot_start_end",
+            "slot_center",
+            "slot_far_end"
+          ],
+          "pass_rule": "All required constraints must be satisfied at all three evaluation positions."
+        },
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable at each evaluated slot position.",
+          "Displacement magnitude at the evaluated slot fastener centroid must not exceed the specified limit at each evaluated slot position."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa_over_all_slot_positions",
+          "slot_position_displacements_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Support holes are idealized as fixed cylindrical constraints.",
+          "The slot is evaluated using three discrete fastener positions rather than a continuous search over all possible positions."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "moderate_to_high",
+        "why_it_is_hard": [
+          "Slot ends create local stress concentration and reduce the available ligament width near the adjustable interface.",
+          "A profile that passes at the slot center may fail at one of the slot ends, so the solver must reason about multiple operating positions.",
+          "Because thickness is fixed and the slot is prescribed, the main design freedom is in how the outer boundary supports the weakened slot region."
+        ]
+      },
+      "reference_solution_guidance": {
+        "non_binding_observations": [
+          "Good solutions usually preserve generous material around the slot ends and taper away from the slot-support load path only in lower-stress regions.",
+          "Designs that neck down too aggressively near the slot are likely to fail at one or both slot ends.",
+          "Smooth outer-profile transitions generally outperform abrupt shoulders near slot ligaments."
+        ],
+        "not_part_of_formal_constraints": true
+      }
+    },
+    {
+      "task_id": "F-T1-05",
+      "task_name": "Pin-Loaded Lug Plate",
+      "suite_id": "flat_bracket_suite_v0_2_1",
+      "family_code": "F-T1",
+      "version": "0.2.4",
+      "task_class": "flat_bracket",
+      "purpose": "Flat lug task that tests local hole-region sizing, edge-distance reasoning, and bearing-driven stress handling under a standardized pin-load abstraction.",
+      "natural_language_task_description": "Design a single-piece flat lug bracket made from ASTM A36 steel with Young’s modulus 200 GPa, Poisson’s ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. The bracket must be a single constant-thickness plate of thickness 8.0 mm lying in the x-y plane, with its midplane at z = 0, and it must fit inside the bounding envelope x in [0, 140] mm, y in [-35, 35] mm, z in [-4, 4] mm. The bracket is mounted through two required support holes of diameter 8.5 mm centered at (18, -18, 0) mm and (18, 18, 0) mm, and all cylindrical surfaces of these holes are fixed in translation. The bracket carries load through one required pin hole of diameter 20.0 mm centered at (112, 0, 0) mm. A cosine bearing traction over a 180-degree arc is applied on the cylindrical surface of the pin hole, producing a resultant force of 2400 N in the +x direction. The loaded half of the hole faces opposite to the applied load direction. You may change the 2D outer profile, but all holes must remain fixed in size and position, and the bracket must remain a single flat plate with no bends, no ribs, no welded stiffeners, no slots, and no cutouts. The minimum edge distance from any hole edge to the outer boundary is 8.0 mm. The minimum ligament width between any two hole edges or between a hole edge and the outer boundary is 10.0 mm. The minimum internal radius is 4.0 mm, the minimum external corner radius is 2.0 mm, and the minimum feature size is 4.0 mm. The maximum allowable von Mises stress is 165 MPa. The displacement magnitude at the centroid of the loaded pin hole at (112, 0, 0) mm must not exceed 0.40 mm. Minimize mass while satisfying all geometric, manufacturing, stress, and displacement constraints.",
+      "loading_regime": "in_plane_axial",
+      "mechanics_focus": [
+        "lug-region widening",
+        "edge distance",
+        "bearing-driven stress field",
+        "net-section preservation",
+        "tear-out resistance proxy through FEA stress field"
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 165.0,
+        "stress_allowable_note": "The allowable stress is calibrated for a bracket-level FEA benchmark using an idealized bearing load abstraction. It is intentionally more permissive than highly conservative handbook-style static design allowables so that outer-profile quality remains discriminative."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "candidate_processes": [
+          "laser cutting",
+          "waterjet cutting",
+          "machining from plate"
+        ],
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "support_hole_diameters": "fixed",
+          "support_hole_centers": "fixed",
+          "pin_hole_diameter": "fixed",
+          "pin_hole_center": "fixed",
+          "cutouts": "forbidden",
+          "slots": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 140.0,
+          "y_min": -35.0,
+          "y_max": 35.0,
+          "z_min": -4.0,
+          "z_max": 4.0
+        },
+        "plate_thickness_mm": 8.0,
+        "support_region": {
+          "description": "Two required mounting holes define the rigid support interface near the left side of the plate.",
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [18.0, -18.0, 0.0],
+            [18.0, 18.0, 0.0]
+          ],
+          "support_hole_pattern_centroid_mm": [18.0, 0.0, 0.0]
+        },
+        "loaded_feature": {
+          "description": "One required pin hole transfers the in-plane load through a cosine bearing distribution on a 180-degree arc.",
+          "hole_diameter_mm": 20.0,
+          "hole_center_mm": [112.0, 0.0, 0.0]
+        },
+        "lug_geometry_note": "The loaded pin hole lies closer to the free end than the support region, so the design must maintain sufficient edge distance and net section around the lug end."
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "All cylindrical surfaces of the two support holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ],
+          "rotation_note": "No separate rotational degrees of freedom exist in the solid model."
+        },
+        "load_introduction_type": "cosine_bearing_180deg",
+        "load_definition": {
+          "description": "A cosine bearing traction is applied over a 180-degree arc on the loaded pin hole.",
+          "resultant_force_vector_N": [
+            2400.0,
+            0.0,
+            0.0
+          ],
+          "loaded_arc_orientation": "The loaded half of the hole faces opposite to the applied load direction.",
+          "application_region": "180-degree arc on the cylindrical surface of the pin hole",
+          "note": "Peak bearing traction lies on the load line and tapers to zero at the two ends of the contact arc."
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 165.0,
+          "displacement_constraint": {
+            "measurement_type": "centroid_of_loaded_hole",
+            "maximum_displacement_mm": 0.40,
+            "measurement_note": "Displacement magnitude is evaluated at the centroid of the loaded pin hole."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "edge_distance_definition": "Minimum distance from any hole edge to the outer profile boundary.",
+          "edge_distance_convention_note": "In the flat bracket suite, edge distance is measured from hole edge to outer boundary. This differs from the hole-center-based convention used in the L, Z, and U bracket suites.",
+          "minimum_ligament_width_mm": 10.0,
+          "ligament_definition": "Minimum material width between any two hole edges or between a hole edge and the outer boundary where applicable.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "minimum_feature_size_mm": 4.0,
+          "single_connected_body_required": true,
+          "self_intersection_forbidden": true,
+          "cutouts_forbidden": true,
+          "slots_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "all_required_holes_must_be_preserved": true,
+          "support_hole_positions_fixed": true,
+          "support_hole_diameters_fixed": true,
+          "loaded_pin_hole_position_fixed": true,
+          "loaded_pin_hole_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass",
+        "secondary_objective_note": "Among designs of similar mass, lower peak stress and lower loaded-hole displacement are preferred, but only mass is the formal optimization objective once all constraints are satisfied."
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at the centroid of the loaded pin hole must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "loaded_pin_hole_centroid_displacement_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Support holes are idealized as fixed cylindrical constraints.",
+          "The cosine 180-degree bearing load is a Tier 1 abstraction for pin-in-hole loading rather than a detailed contact model."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "high",
+        "why_it_is_hard": [
+          "Material near the pin hole must be preserved to maintain edge distance, local bearing load transfer, and net section.",
+          "A naïve narrow strap toward the pin hole is likely to be stress-inefficient near the lug region.",
+          "Because thickness is fixed and cutouts are forbidden, the solver must express structural intelligence entirely through outer-profile shaping."
+        ]
+      },
+      "reference_solution_guidance": {
+        "non_binding_observations": [
+          "Good solutions usually widen substantially around the loaded pin hole and taper toward the support region through smooth transitions.",
+          "The lug end should typically remain rounded or bulb-like rather than sharply necked down near the pin hole.",
+          "Large smooth outer-profile transitions are generally favored over abrupt shoulders near the hole ligaments."
+        ],
+        "not_part_of_formal_constraints": true
+      }
+    },
+    {
+      "task_id": "F-T1-06",
+      "task_name": "Eccentric Plate with Lightening Cutouts",
+      "suite_id": "flat_bracket_suite_v0_2_1",
+      "family_code": "F-T1",
+      "version": "0.2.4",
+      "task_class": "flat_bracket",
+      "purpose": "Topology-sensitive in-plane optimization task that extends eccentric load-path reasoning to constrained material removal.",
+      "natural_language_task_description": "Design a single-piece flat bracket made from ASTM A36 steel with Young’s modulus 200 GPa, Poisson’s ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. The bracket must be a single constant-thickness plate of thickness 8.0 mm lying in the x-y plane, with its midplane at z = 0, and it must fit inside the bounding envelope x in [0, 160] mm, y in [-50, 50] mm, z in [-4, 4] mm. The bracket is mounted through four required support holes of diameter 8.5 mm centered at (20, -26, 0) mm, (20, 26, 0) mm, (52, -26, 0) mm, and (52, 26, 0) mm, and all cylindrical surfaces of these support holes are fixed in translation. The support-hole pattern centroid is at (36, 0, 0) mm. The bracket is loaded through one required loaded hole of diameter 12.0 mm centered at (140, 20, 0) mm. A total in-plane force of 2400 N in the -y direction is applied as a distributed load over the full cylindrical surface of the loaded hole. Because the loaded hole is offset in y from the support-hole centroid, the bracket experiences both direct in-plane loading and an in-plane moment. You may change the 2D outer profile and you must include internal cutouts, but all required holes must remain fixed in size and position, and the bracket must remain a single flat plate with no bends, no ribs, and no welded stiffeners. At least 1 and at most 3 internal cutouts are required. Each cutout must be a smooth closed internal void with minimum area 120.0 mm^2, minimum internal radius 4.0 mm, minimum ligament 6.0 mm to the outer boundary, minimum ligament 8.0 mm to any hole edge, and minimum ligament 6.0 mm to any other cutout. The general 10.0 mm minimum ligament width still applies between hole edges and between a hole edge and the outer boundary. The minimum edge distance from any hole edge to the outer boundary is 8.0 mm. The minimum internal radius is 4.0 mm, the minimum external corner radius is 2.0 mm, and the minimum feature size is 4.0 mm. The maximum allowable von Mises stress is 170 MPa. The displacement magnitude at the centroid of the loaded hole at (140, 20, 0) mm must not exceed 0.50 mm. Minimize mass while satisfying all geometric, cutout, manufacturing, stress, and displacement constraints.",
+      "loading_regime": "in_plane_eccentric",
+      "mechanics_focus": [
+        "eccentric in-plane load transfer",
+        "in-plane moment reaction",
+        "asymmetric stress field",
+        "stress redistribution around cutouts",
+        "material removal from low-stress regions",
+        "cutout placement and shaping",
+        "profile asymmetry"
+      ],
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 170.0,
+        "stress_allowable_note": "The allowable stress is intentionally more permissive than highly conservative handbook-style static design allowables used in some earlier bracket-suite tasks. The goal is to keep the benchmark sensitive to profile-shaping quality, cutout-placement quality, and mass minimization quality, rather than letting conservative oversizing dominate the solution space."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "candidate_processes": [
+          "laser cutting",
+          "waterjet cutting",
+          "machining from plate"
+        ],
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "support_hole_diameters": "fixed",
+          "support_hole_centers": "fixed",
+          "loaded_hole_diameter": "fixed",
+          "loaded_hole_center": "fixed",
+          "cutouts": "designable_with_constraints",
+          "slots": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 160.0,
+          "y_min": -50.0,
+          "y_max": 50.0,
+          "z_min": -4.0,
+          "z_max": 4.0
+        },
+        "plate_thickness_mm": 8.0,
+        "support_region": {
+          "description": "Four required mounting holes define the rigid support interface near the left side of the plate.",
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [20.0, -26.0, 0.0],
+            [20.0, 26.0, 0.0],
+            [52.0, -26.0, 0.0],
+            [52.0, 26.0, 0.0]
+          ],
+          "support_hole_pattern_centroid_mm": [36.0, 0.0, 0.0]
+        },
+        "loaded_feature": {
+          "description": "One required loaded hole applies the in-plane force. Its centerline is offset in y from the support-hole centroid, creating eccentricity and an in-plane moment.",
+          "hole_diameter_mm": 12.0,
+          "hole_center_mm": [140.0, 20.0, 0.0],
+          "eccentricity_relative_to_support_centroid_mm": {
+            "delta_x": 104.0,
+            "delta_y": 20.0
+          }
+        },
+        "cutout_region_note": "Internal cutouts may be placed only within the bracket body and must not intersect any required hole, the outer boundary, or each other. Cutouts are evaluated as closed internal voids in the 2D plate profile.",
+        "initial_reference_profile_note": "The benchmark does not require a specific starting profile. Any single connected 2D plate profile satisfying all interface-preservation, cutout, and manufacturability rules is allowed."
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "All cylindrical surfaces of the four support holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ],
+          "rotation_note": "No separate rotational degrees of freedom exist in the solid model."
+        },
+        "load_introduction_type": "distributed_hole_surface",
+        "load_definition": {
+          "description": "A total in-plane force is distributed uniformly around the cylindrical surface of the loaded hole.",
+          "total_force_vector_N": [
+            0.0,
+            -2400.0,
+            0.0
+          ],
+          "application_region": "full cylindrical surface of loaded hole",
+          "note": "The force lies in the plate plane. Because the loaded hole center is offset from the support-hole centroid, the bracket experiences both direct in-plane loading and an in-plane moment."
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 170.0,
+          "displacement_constraint": {
+            "measurement_type": "centroid_of_loaded_hole",
+            "maximum_displacement_mm": 0.50,
+            "measurement_note": "Displacement magnitude is evaluated at the centroid of the loaded hole."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "edge_distance_definition": "Minimum distance from hole edge to outer profile boundary.",
+          "edge_distance_convention_note": "In the flat bracket suite, edge distance is measured from hole edge to outer boundary. This differs from the hole-center-based convention used in the L, Z, and U bracket suites.",
+          "minimum_ligament_width_mm": 10.0,
+          "ligament_definition": "The 10 mm minimum ligament width applies between hole edges and between a hole edge and the outer boundary. Cutout-related ligament requirements are governed separately by the cutout_constraints section.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "minimum_feature_size_mm": 4.0,
+          "single_connected_body_required": true,
+          "self_intersection_forbidden": true,
+          "slots_forbidden": true
+        },
+        "cutout_constraints": {
+          "cutouts_required": true,
+          "minimum_cutout_count": 1,
+          "maximum_cutout_count": 3,
+          "minimum_cutout_area_mm2": 120.0,
+          "minimum_cutout_internal_radius_mm": 4.0,
+          "minimum_cutout_to_outer_boundary_ligament_mm": 6.0,
+          "minimum_cutout_to_hole_edge_ligament_mm": 8.0,
+          "minimum_cutout_to_cutout_ligament_mm": 6.0,
+          "cutout_shape_rule": "Each cutout must be a smooth closed internal void with no self-intersection and no corner radius smaller than the minimum cutout internal radius.",
+          "anti_degenerate_note": "The cutout requirements are intended to prevent degenerate compliance such as tiny pinhole voids or swiss-cheese style perforation patterns."
+        },
+        "interface_preservation_constraints": {
+          "all_required_holes_must_be_preserved": true,
+          "support_hole_positions_fixed": true,
+          "support_hole_diameters_fixed": true,
+          "loaded_hole_position_fixed": true,
+          "loaded_hole_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass",
+        "secondary_objective_note": "Among designs of similar mass, lower peak stress and lower loaded-hole displacement are preferred, but only mass is the formal optimization objective once all constraints are satisfied."
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing, cutout, and interface-preservation constraints.",
+          "At least one internal cutout must be present.",
+          "No more than three internal cutouts may be present.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at the centroid of the loaded hole must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "loaded_hole_centroid_displacement_mm",
+          "cutout_count",
+          "cutout_areas_mm2",
+          "final_outer_profile_description",
+          "final_cutout_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Support holes are idealized as fixed cylindrical constraints.",
+          "The distributed hole-surface load is a Tier 1 abstraction for bracket-level evaluation rather than a detailed pin or bolt-contact model.",
+          "Cutouts are treated as geometric voids only; no manufacturing residual stresses or edge-quality effects are modeled."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "high",
+        "scientific_discrimination_value": "high",
+        "why_it_is_hard": [
+          "The eccentric load creates an asymmetric stress path, so material cannot be removed uniformly.",
+          "Because thickness is fixed, the solver must reduce mass through intelligent 2D geometry changes rather than trivial thickness scaling.",
+          "Cutouts create local stress concentration and reduce available ligament paths, so the solver must identify low-stress regions for removal without breaking the dominant load path.",
+          "The minimum area and maximum count rules prevent degenerate cutout solutions and force meaningful topology decisions."
+        ]
+      },
+      "reference_solution_guidance": {
+        "non_binding_observations": [
+          "Good solutions will usually preserve a strong diagonal material path from the support-hole group toward the loaded hole.",
+          "Cutouts are generally better placed in low-stress regions away from the main eccentric load path and away from the support-hole cluster.",
+          "One or two larger smooth cutouts are often more efficient than multiple tiny cutouts near critical ligaments.",
+          "Large smooth transitions around both the outer boundary and cutout boundaries are generally favored over sharp neck-down regions."
+        ],
+        "not_part_of_formal_constraints": true
+      }
+    }
+  ]
+}

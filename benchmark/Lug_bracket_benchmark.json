@@ -1,0 +1,897 @@
+{
+  "benchmark_name": "lug_benchmark_tier1_suite",
+  "benchmark_version": "0.2-draft",
+  "description": "Standalone lug component benchmark suite focused on pin-loaded bearing, net-section, shear-out, and load-angle effects. All Tier 1 tasks are single constant-thickness plate lugs evaluated with cosine bearing on the bore surface. Double-shear lug pairs with through-thickness bearing variation are deferred to Tier 2.",
+  "task_count": 5,
+  "feasibility_priority_tasks": [
+    "LUG-T1-03",
+    "LUG-T1-04"
+  ],
+  "scientifically_discriminative_tasks": [
+    "LUG-T1-03",
+    "LUG-T1-04",
+    "LUG-T1-05"
+  ],
+  "family_definition": {
+    "family_LUG_A": "Axially loaded single lugs \u2014 load along lug longitudinal axis",
+    "family_LUG_B": "Transversely and obliquely loaded single lugs \u2014 load at angle to lug axis"
+  },
+  "suite_notes": {
+    "relationship_to_other_suites": "The U-bracket suite models clevises as fork assemblies testing arm spreading. The flat bracket suite models lugs as 2D profile shaping problems within a larger plate. This suite focuses on the pin-bore structural detail itself.",
+    "pin_modeling_note": "Tier 1 lug tasks do not model an explicit pin body. Pin load is represented by a cosine bearing distribution over a 180-degree arc on the bore cylindrical surface.",
+    "tier_2_deferred_items": "Double-shear lug pairs with non-uniform through-thickness bearing, interference-fit pin effects, bushed holes, fatigue evaluation, and thermal loading are deferred to Tier 2.",
+    "attachment_pattern_variation_note": "Most Tier 1 tasks use a two-bolt attachment. LUG-T1-05 uses a four-bolt rectangular pattern to test shank design under a wider attachment interface.",
+    "edge_distance_convention_note": "This suite measures edge distance from bore edge or hole edge to the nearest free edge, consistent with the flat bracket suite convention."
+  },
+  "global_conventions": {
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "mass": "kg",
+      "density": "kg/m^3"
+    },
+    "coordinate_system": {
+      "definition": "The lug midplane lies in the x-y plane. z is thickness. Pin bore axis is parallel to z.",
+      "axis_meanings": {
+        "x": "lug longitudinal axis from attachment end toward bore head",
+        "y": "transverse in-plane direction",
+        "z": "thickness direction and pin bore axis"
+      },
+      "plate_positioning_note": "Lug midplane is fixed at z = 0. The z-range defines plate thickness extent only."
+    },
+    "evaluation_method": {
+      "style": "linear-elastic bracket-level FEA",
+      "primary_metrics": [
+        "mass",
+        "maximum von Mises stress",
+        "bore-center displacement magnitude"
+      ]
+    },
+    "bearing_distribution_conventions": {
+      "standard_distribution": "cosine_bearing_180deg",
+      "loaded_half_rule": "The loaded arc is always centered opposite to the applied load direction."
+    },
+    "failure_mode_evaluation": {
+      "evaluation_approach": "FEA von Mises stress field",
+      "evaluation_note": "Classical lug failure modes (bearing, net-section, shear-out) are captured through the FEA stress field rather than separate hand-calculation formulas."
+    },
+    "edge_distance_definition": {
+      "quantity": "bore_edge_to_nearest_free_edge",
+      "definition": "Minimum distance from pin bore edge or attachment hole edge to nearest free edge of lug body."
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "LUG-T1-01",
+      "task_version": "0.2-draft",
+      "name": "Axially loaded single lug, baseline steel",
+      "family": "LUG-A",
+      "category": "static_structural",
+      "design_intent": "Simplest lug benchmark: single plate lug loaded axially through a pin bore. Establishes the schema and tests basic bearing/net-section/shear-out sizing.",
+      "loading_regime": "in_plane_axial",
+      "load_angle_deg": 0,
+      "natural_language_task_description": "Design a single-piece machined steel lug for axial pin loading. The lug lies in the x-y plane with x along the lug longitudinal axis from the attachment end toward the pin bore, y as the transverse in-plane direction, and z as the thickness direction. The lug midplane is at z = 0. The lug body must fit inside an axis-aligned bounding box with x in [0, 120] mm, y in [-35, 35] mm, and z in [-5, 5] mm. The plate thickness is fixed at 10 mm. The attachment interface at the left end consists of two required bolt holes of 8.5 mm diameter centered at (15, -14, 0) mm and (15, 14, 0) mm. The cylindrical surfaces of these two attachment holes are fixed in translation. The pin bore has a diameter of 22 mm centered at (95, 0, 0) mm with bore axis parallel to z. The pin load is modeled as a cosine bearing distribution over a 180-degree arc on the bore cylindrical surface, with the loaded half centered opposite to the applied load direction. The applied load is 3000 N in the positive x direction. You may shape the outer 2D profile but the lug must remain a single constant-thickness plate with no bends, no cutouts, and no secondary parts. All required holes must be preserved. Minimum edge distance from any hole edge or bore edge to nearest free edge is 8 mm. Minimum ligament width is 10 mm. Minimum internal fillet radius is 4 mm and minimum external corner radius is 2 mm. Use ASTM A36 steel with elastic modulus 200 GPa, Poisson ratio 0.29, yield strength 250 MPa, and density 7850 kg/m^3. The objective is to minimize lug mass while keeping maximum von Mises stress below 160 MPa and maximum displacement at the bore center below 0.25 mm.",
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 160.0,
+        "stress_allowable_note": "Calibrated for FEA with cosine bearing. Accounts for bore edge stress concentration."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "attachment_hole_diameters": "fixed",
+          "attachment_hole_centers": "fixed",
+          "bore_diameter": "fixed",
+          "bore_center": "fixed",
+          "cutouts": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 120.0,
+          "y_min": -35.0,
+          "y_max": 35.0,
+          "z_min": -5.0,
+          "z_max": 5.0
+        },
+        "plate_thickness_mm": 10.0,
+        "attachment_region": {
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [
+              15.0,
+              -14.0,
+              0.0
+            ],
+            [
+              15.0,
+              14.0,
+              0.0
+            ]
+          ],
+          "pattern_centroid_mm": [
+            15.0,
+            0.0,
+            0.0
+          ]
+        },
+        "pin_bore": {
+          "bore_diameter_mm": 22.0,
+          "pin_diameter_mm": 20.0,
+          "bore_center_mm": [
+            95.0,
+            0.0,
+            0.0
+          ],
+          "bore_clearance_ratio": 0.1,
+          "bore_axis": "z"
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Cylindrical surfaces of the two attachment holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "cosine_bearing_180deg",
+        "load_definition": {
+          "resultant_force_vector_N": [
+            3000.0,
+            0.0,
+            0.0
+          ],
+          "bearing_arc_deg": 180,
+          "loaded_half_rule": "Loaded arc centered opposite to applied load direction.",
+          "application_region": "180-degree arc on bore cylindrical surface"
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 160.0,
+          "displacement_constraint": {
+            "measurement_type": "bore_center_displacement",
+            "maximum_displacement_mm": 0.25
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8,
+          "edge_distance_definition": "Minimum distance from bore edge or hole edge to nearest free edge of lug body.",
+          "minimum_ligament_width_mm": 10,
+          "ligament_definition": "Minimum material width between any two hole/bore edges or between a hole/bore edge and the outer boundary.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "single_connected_body_required": true,
+          "cutouts_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "attachment_hole_positions_fixed": true,
+          "attachment_hole_diameters_fixed": true,
+          "bore_position_fixed": true,
+          "bore_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at bore center must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "bore_center_displacement_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Attachment holes are idealized as fixed cylindrical constraints.",
+          "The cosine 180-degree bearing load is a Tier 1 abstraction for pin-in-hole loading."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "low",
+        "scientific_discrimination_value": "moderate"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    },
+    {
+      "task_id": "LUG-T1-02",
+      "task_version": "0.2-draft",
+      "name": "Axially loaded single lug, aluminum stiffness-dominated",
+      "family": "LUG-A",
+      "category": "static_structural",
+      "design_intent": "Stiffness-governed lug using aluminum with tight bore displacement limit.",
+      "loading_regime": "in_plane_axial",
+      "load_angle_deg": 0,
+      "natural_language_task_description": "Design a single-piece machined aluminum lug for axial pin loading with a tight displacement constraint. The lug lies in the x-y plane with x along the lug axis, y transverse, z thickness. Lug midplane at z = 0. Bounding box: x in [0, 110] mm, y in [-38, 38] mm, z in [-5, 5] mm. Plate thickness fixed at 10 mm. Two attachment bolt holes of 8.5 mm diameter at (15, -14, 0) mm and (15, 14, 0) mm, fixed in translation. Pin bore of 22 mm diameter at (85, 0, 0) mm, bore axis parallel to z. Cosine bearing 180-degree distribution with loaded half opposite to load direction. Applied load: 2000 N in +x. Use 6061-T6 aluminum: E = 69 GPa, nu = 0.33, yield = 276 MPa, density = 2700 kg/m^3. Single constant-thickness plate, no bends/cutouts. Min edge distance 8 mm, min ligament 10 mm, min internal radius 4 mm, min external corner radius 2 mm. Minimize mass with max von Mises stress below 92 MPa and max bore center displacement below 0.10 mm. The displacement limit is intentionally tight so stiffness governs.",
+      "material": {
+        "name": "6061-T6 aluminum",
+        "youngs_modulus_GPa": 69.0,
+        "poissons_ratio": 0.33,
+        "yield_strength_MPa": 276.0,
+        "density_kg_per_m3": 2700.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 92.0,
+        "stress_allowable_note": "SF = 3.0. Displacement expected to bind before stress."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "attachment_hole_diameters": "fixed",
+          "attachment_hole_centers": "fixed",
+          "bore_diameter": "fixed",
+          "bore_center": "fixed",
+          "cutouts": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 110.0,
+          "y_min": -38.0,
+          "y_max": 38.0,
+          "z_min": -5.0,
+          "z_max": 5.0
+        },
+        "plate_thickness_mm": 10.0,
+        "attachment_region": {
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [
+              15.0,
+              -14.0,
+              0.0
+            ],
+            [
+              15.0,
+              14.0,
+              0.0
+            ]
+          ],
+          "pattern_centroid_mm": [
+            15.0,
+            0.0,
+            0.0
+          ]
+        },
+        "pin_bore": {
+          "bore_diameter_mm": 22.0,
+          "pin_diameter_mm": 20.0,
+          "bore_center_mm": [
+            85.0,
+            0.0,
+            0.0
+          ],
+          "bore_clearance_ratio": 0.1,
+          "bore_axis": "z"
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Cylindrical surfaces of the two attachment holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "cosine_bearing_180deg",
+        "load_definition": {
+          "resultant_force_vector_N": [
+            2000.0,
+            0.0,
+            0.0
+          ],
+          "bearing_arc_deg": 180,
+          "loaded_half_rule": "Loaded arc centered opposite to applied load direction.",
+          "application_region": "180-degree arc on bore cylindrical surface"
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 92.0,
+          "displacement_constraint": {
+            "measurement_type": "bore_center_displacement",
+            "maximum_displacement_mm": 0.1,
+            "measurement_note": "Tight limit \u2014 stiffness governs."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8,
+          "edge_distance_definition": "Minimum distance from bore edge or hole edge to nearest free edge of lug body.",
+          "minimum_ligament_width_mm": 10,
+          "ligament_definition": "Minimum material width between any two hole/bore edges or between a hole/bore edge and the outer boundary.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "single_connected_body_required": true,
+          "cutouts_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "attachment_hole_positions_fixed": true,
+          "attachment_hole_diameters_fixed": true,
+          "bore_position_fixed": true,
+          "bore_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at bore center must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "bore_center_displacement_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Attachment holes are idealized as fixed cylindrical constraints.",
+          "The cosine 180-degree bearing load is a Tier 1 abstraction for pin-in-hole loading."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "moderate"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    },
+    {
+      "task_id": "LUG-T1-03",
+      "task_version": "0.2-draft",
+      "name": "Transversely loaded single lug",
+      "family": "LUG-B",
+      "category": "static_structural",
+      "design_intent": "Lug loaded perpendicular to its axis. Tests whether the solver understands that transverse loading shifts the critical stress to the bore flanks.",
+      "loading_regime": "in_plane_transverse",
+      "load_angle_deg": 90,
+      "natural_language_task_description": "Design a single-piece machined steel lug loaded transversely through the pin bore. The lug lies in the x-y plane with x along the lug axis, y transverse, z thickness. Lug midplane at z = 0. Bounding box: x in [0, 120] mm, y in [-40, 40] mm, z in [-5, 5] mm. Plate thickness fixed at 10 mm. Two attachment bolt holes of 8.5 mm diameter at (15, -14, 0) mm and (15, 14, 0) mm, fixed in translation. Pin bore of 22 mm diameter at (95, 0, 0) mm, bore axis parallel to z. Cosine bearing 180-degree distribution. Applied load: 2500 N in +y direction. The loaded 180-degree arc is centered on the -y side of the bore. This shifts peak stress from the bearing line to the bore flanks. Use ASTM A36 steel: E = 200 GPa, nu = 0.29, yield = 250 MPa, density = 7850 kg/m^3. Single constant-thickness plate, no bends/cutouts. Min edge distance 10 mm (larger than axial tasks because transverse loading creates y-direction shear-out risk), min ligament 12 mm, min internal radius 4 mm, min external corner radius 2 mm. Minimize mass with max von Mises stress below 155 MPa and max bore center displacement below 0.30 mm.",
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 155.0,
+        "stress_allowable_note": "Lower than axial tasks \u2014 transverse loading creates more severe local bending at bore."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "attachment_hole_diameters": "fixed",
+          "attachment_hole_centers": "fixed",
+          "bore_diameter": "fixed",
+          "bore_center": "fixed",
+          "cutouts": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 120.0,
+          "y_min": -40.0,
+          "y_max": 40.0,
+          "z_min": -5.0,
+          "z_max": 5.0
+        },
+        "plate_thickness_mm": 10.0,
+        "attachment_region": {
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [
+              15.0,
+              -14.0,
+              0.0
+            ],
+            [
+              15.0,
+              14.0,
+              0.0
+            ]
+          ],
+          "pattern_centroid_mm": [
+            15.0,
+            0.0,
+            0.0
+          ]
+        },
+        "pin_bore": {
+          "bore_diameter_mm": 22.0,
+          "pin_diameter_mm": 20.0,
+          "bore_center_mm": [
+            95.0,
+            0.0,
+            0.0
+          ],
+          "bore_clearance_ratio": 0.1,
+          "bore_axis": "z"
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Cylindrical surfaces of the two attachment holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "cosine_bearing_180deg",
+        "load_definition": {
+          "resultant_force_vector_N": [
+            0.0,
+            2500.0,
+            0.0
+          ],
+          "bearing_arc_deg": 180,
+          "loaded_half_rule": "Loaded arc centered on -y side (opposite to +y load).",
+          "application_region": "180-degree arc on bore cylindrical surface"
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 155.0,
+          "displacement_constraint": {
+            "measurement_type": "bore_center_displacement",
+            "maximum_displacement_mm": 0.3
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 10,
+          "edge_distance_definition": "Minimum distance from bore edge or hole edge to nearest free edge of lug body.",
+          "minimum_ligament_width_mm": 12,
+          "ligament_definition": "Minimum material width between any two hole/bore edges or between a hole/bore edge and the outer boundary.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "single_connected_body_required": true,
+          "cutouts_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "attachment_hole_positions_fixed": true,
+          "attachment_hole_diameters_fixed": true,
+          "bore_position_fixed": true,
+          "bore_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at bore center must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "bore_center_displacement_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Attachment holes are idealized as fixed cylindrical constraints.",
+          "The cosine 180-degree bearing load is a Tier 1 abstraction for pin-in-hole loading."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "high"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    },
+    {
+      "task_id": "LUG-T1-04",
+      "task_version": "0.2-draft",
+      "name": "Obliquely loaded single lug, 45-degree load",
+      "family": "LUG-B",
+      "category": "static_structural",
+      "design_intent": "Lug loaded at 45 degrees creating an asymmetric stress field requiring asymmetric head shaping.",
+      "loading_regime": "in_plane_oblique",
+      "load_angle_deg": 45,
+      "natural_language_task_description": "Design a single-piece machined steel lug loaded obliquely at 45 degrees to the lug axis. The lug lies in the x-y plane with x along the lug axis, y transverse, z thickness. Lug midplane at z = 0. Bounding box: x in [0, 125] mm, y in [-42, 42] mm, z in [-5, 5] mm. Plate thickness fixed at 10 mm. Two attachment bolt holes of 8.5 mm diameter at (15, -14, 0) mm and (15, 14, 0) mm, fixed in translation. Pin bore of 22 mm diameter at (98, 0, 0) mm, bore axis parallel to z. Cosine bearing 180-degree distribution. Applied load: 2000 N in +x and 2000 N in +y simultaneously (resultant ~2828 N at 45 degrees). The loaded arc is centered opposite to the resultant direction. Use ASTM A572 Grade 50 steel: E = 200 GPa, nu = 0.29, yield = 345 MPa, density = 7850 kg/m^3. Single constant-thickness plate, no bends/cutouts. Min edge distance 10 mm, min ligament 12 mm, min internal radius 4 mm, min external corner radius 2 mm. Minimize mass with max von Mises stress below 170 MPa and max bore center displacement below 0.28 mm.",
+      "material": {
+        "name": "ASTM A572 Grade 50 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 345.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 170.0,
+        "stress_allowable_note": "Higher-strength steel with moderately permissive allowable for profile discrimination."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "attachment_hole_diameters": "fixed",
+          "attachment_hole_centers": "fixed",
+          "bore_diameter": "fixed",
+          "bore_center": "fixed",
+          "cutouts": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 125.0,
+          "y_min": -42.0,
+          "y_max": 42.0,
+          "z_min": -5.0,
+          "z_max": 5.0
+        },
+        "plate_thickness_mm": 10.0,
+        "attachment_region": {
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [
+              15.0,
+              -14.0,
+              0.0
+            ],
+            [
+              15.0,
+              14.0,
+              0.0
+            ]
+          ],
+          "pattern_centroid_mm": [
+            15.0,
+            0.0,
+            0.0
+          ]
+        },
+        "pin_bore": {
+          "bore_diameter_mm": 22.0,
+          "pin_diameter_mm": 20.0,
+          "bore_center_mm": [
+            98.0,
+            0.0,
+            0.0
+          ],
+          "bore_clearance_ratio": 0.1,
+          "bore_axis": "z"
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Cylindrical surfaces of the two attachment holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "cosine_bearing_180deg",
+        "load_definition": {
+          "resultant_force_vector_N": [
+            2000.0,
+            2000.0,
+            0.0
+          ],
+          "resultant_magnitude_N": 2828.0,
+          "load_angle_deg": 45.0,
+          "bearing_arc_deg": 180,
+          "loaded_half_rule": "Loaded arc centered opposite to resultant direction.",
+          "application_region": "180-degree arc on bore cylindrical surface"
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 170.0,
+          "displacement_constraint": {
+            "measurement_type": "bore_center_displacement",
+            "maximum_displacement_mm": 0.28
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 10,
+          "edge_distance_definition": "Minimum distance from bore edge or hole edge to nearest free edge of lug body.",
+          "minimum_ligament_width_mm": 12,
+          "ligament_definition": "Minimum material width between any two hole/bore edges or between a hole/bore edge and the outer boundary.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "single_connected_body_required": true,
+          "cutouts_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "attachment_hole_positions_fixed": true,
+          "attachment_hole_diameters_fixed": true,
+          "bore_position_fixed": true,
+          "bore_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable.",
+          "Displacement magnitude at bore center must not exceed the specified limit."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "bore_center_displacement_mm",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Attachment holes are idealized as fixed cylindrical constraints.",
+          "The cosine 180-degree bearing load is a Tier 1 abstraction for pin-in-hole loading."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "high"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    },
+    {
+      "task_id": "LUG-T1-05",
+      "task_version": "0.2-draft",
+      "name": "Multi-load-case single lug with four-bolt attachment",
+      "family": "LUG-A",
+      "category": "static_structural",
+      "design_intent": "Multi-directional loading with a wider four-bolt attachment pattern. Tests robust profile design and different shank geometry.",
+      "loading_regime": "in_plane_multi_case",
+      "natural_language_task_description": "Design a single-piece machined steel lug that must pass four load cases: primary axial, secondary transverse, combined oblique, and reverse axial. The lug lies in the x-y plane with x along the lug axis, y transverse, z thickness. Lug midplane at z = 0. Bounding box: x in [0, 120] mm, y in [-40, 40] mm, z in [-5, 5] mm. Plate thickness fixed at 10 mm. Four attachment bolt holes of 8.5 mm diameter in a rectangular pattern at (15, -16, 0) mm, (15, 16, 0) mm, (38, -16, 0) mm, and (38, 16, 0) mm; all four fixed in translation. Pin bore of 22 mm diameter at (95, 0, 0) mm, bore axis parallel to z. Each load case uses cosine bearing 180-degree distribution with loaded half opposite to that case's load direction. Load cases: LC1 = 3200 N in +x, LC2 = 1800 N in +y, LC3 = 1800 N in +x and 1200 N in +y combined (~33.7 degrees), LC4 = 2400 N in -x. Use ASTM A36 steel: E = 200 GPa, nu = 0.29, yield = 250 MPa, density = 7850 kg/m^3. Single constant-thickness plate, no bends/cutouts. Min edge distance 10 mm, min ligament 12 mm, min internal radius 4 mm, min external corner radius 2 mm. Minimize mass with max von Mises stress below 155 MPa and max bore center displacement below 0.30 mm under all four load cases independently.",
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 155.0,
+        "stress_allowable_note": "Conservative for multi-directional loading."
+      },
+      "manufacturing_model": {
+        "class": "single constant-thickness plate",
+        "design_variable_policy": {
+          "thickness": "fixed",
+          "outer_profile": "designable",
+          "attachment_hole_diameters": "fixed",
+          "attachment_hole_centers": "fixed",
+          "bore_diameter": "fixed",
+          "bore_center": "fixed",
+          "cutouts": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": 0.0,
+          "x_max": 120.0,
+          "y_min": -40.0,
+          "y_max": 40.0,
+          "z_min": -5.0,
+          "z_max": 5.0
+        },
+        "plate_thickness_mm": 10.0,
+        "attachment_region": {
+          "description": "Four-bolt rectangular pattern.",
+          "hole_diameter_mm": 8.5,
+          "hole_centers_mm": [
+            [
+              15.0,
+              -16.0,
+              0.0
+            ],
+            [
+              15.0,
+              16.0,
+              0.0
+            ],
+            [
+              38.0,
+              -16.0,
+              0.0
+            ],
+            [
+              38.0,
+              16.0,
+              0.0
+            ]
+          ],
+          "pattern_centroid_mm": [
+            26.5,
+            0.0,
+            0.0
+          ]
+        },
+        "pin_bore": {
+          "bore_diameter_mm": 22.0,
+          "pin_diameter_mm": 20.0,
+          "bore_center_mm": [
+            95.0,
+            0.0,
+            0.0
+          ],
+          "bore_clearance_ratio": 0.1,
+          "bore_axis": "z"
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Cylindrical surfaces of all four attachment holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "cosine_bearing_180deg",
+        "load_cases": [
+          {
+            "id": "LC1",
+            "description": "Primary axial",
+            "resultant_force_vector_N": [
+              3200.0,
+              0.0,
+              0.0
+            ],
+            "load_angle_deg": 0,
+            "bearing_arc_deg": 180
+          },
+          {
+            "id": "LC2",
+            "description": "Secondary transverse",
+            "resultant_force_vector_N": [
+              0.0,
+              1800.0,
+              0.0
+            ],
+            "load_angle_deg": 90,
+            "bearing_arc_deg": 180
+          },
+          {
+            "id": "LC3",
+            "description": "Combined oblique",
+            "resultant_force_vector_N": [
+              1800.0,
+              1200.0,
+              0.0
+            ],
+            "load_angle_deg": 33.7,
+            "bearing_arc_deg": 180
+          },
+          {
+            "id": "LC4",
+            "description": "Reverse axial",
+            "resultant_force_vector_N": [
+              -2400.0,
+              0.0,
+              0.0
+            ],
+            "load_angle_deg": 180,
+            "bearing_arc_deg": 180
+          }
+        ],
+        "loaded_half_rule": "For each load case, the loaded 180-degree arc is centered opposite to that case's resultant force vector direction."
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 155.0,
+          "displacement_constraint": {
+            "measurement_type": "bore_center_displacement",
+            "maximum_displacement_mm": 0.3,
+            "measurement_note": "All four load cases must independently satisfy this limit."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 10,
+          "edge_distance_definition": "Minimum distance from bore edge or hole edge to nearest free edge of lug body.",
+          "minimum_ligament_width_mm": 12,
+          "ligament_definition": "Minimum material width between any two hole/bore edges or between a hole/bore edge and the outer boundary.",
+          "minimum_internal_radius_mm": 4.0,
+          "minimum_external_corner_radius_mm": 2.0,
+          "single_connected_body_required": true,
+          "cutouts_forbidden": true
+        },
+        "interface_preservation_constraints": {
+          "attachment_hole_positions_fixed": true,
+          "attachment_hole_diameters_fixed": true,
+          "bore_position_fixed": true,
+          "bore_diameter_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static",
+        "pass_fail_rules": [
+          "Design must remain inside the bounding envelope.",
+          "Design must satisfy all manufacturing and interface-preservation constraints.",
+          "Maximum von Mises stress must not exceed the specified allowable. under any load case",
+          "Displacement magnitude at bore center must not exceed the specified limit under any load case."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa_by_load_case",
+          "bore_center_displacement_mm_by_load_case",
+          "final_outer_profile_description"
+        ],
+        "known_modeling_assumptions": [
+          "Bolt compliance and preload are not modeled.",
+          "Attachment holes are idealized as fixed cylindrical constraints.",
+          "The cosine 180-degree bearing load is a Tier 1 abstraction for pin-in-hole loading."
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "high"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    }
+  ]
+}

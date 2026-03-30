@@ -1,0 +1,826 @@
+{
+  "benchmark_name": "standoff_bracket_tier1_suite",
+  "benchmark_version": "0.2-draft",
+  "description": "Standoff and spacer bracket benchmark suite focused on compressive axial loading, buckling resistance, eccentric loading, and combined compression-bending-shear. Introduces linearized buckling eigenvalue constraints. Flange prying and aluminum stiffness variants are deferred to Tier 2.",
+  "task_count": 4,
+  "feasibility_priority_tasks": [
+    "SO-T1-02",
+    "SO-T1-04"
+  ],
+  "scientifically_discriminative_tasks": [
+    "SO-T1-03",
+    "SO-T1-04"
+  ],
+  "family_definition": {
+    "family_SO_A": "Concentric compression standoffs \u2014 axial load through centroid",
+    "family_SO_B": "Eccentric compression standoffs \u2014 load offset from centroid"
+  },
+  "suite_notes": {
+    "buckling_note": "This is the first benchmark suite to include buckling eigenvalue constraints. Buckling uses linearized eigenvalue analysis, not nonlinear post-buckling.",
+    "relationship_to_other_suites": "L/Z/U/flat/lug suites test bending, shear, bearing mechanics. This standoff suite is the only one testing compression, buckling, and P-delta interaction.",
+    "tier_2_deferred_items": "Flange prying (SO-T1-04 from v0.1), aluminum stiffness-dominated standoffs (SO-T1-05 from v0.1), dynamic loading, thermal effects, and threaded connection mechanics are deferred to Tier 2.",
+    "coordinate_system_note": "This suite uses z as the standoff axial direction (vertical column axis), unlike the plate-based suites where z is the thickness direction. This reflects the physical orientation of a compression standoff."
+  },
+  "global_conventions": {
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "mass": "kg",
+      "density": "kg/m^3"
+    },
+    "coordinate_system": {
+      "definition": "The standoff axis is along z (vertical). Flanges lie in the x-y plane.",
+      "axis_meanings": {
+        "x": "primary in-plane direction of flange",
+        "y": "secondary in-plane direction of flange",
+        "z": "standoff axial direction, compression acts in -z"
+      },
+      "coordinate_note": "z is the standoff column axis, not the thickness direction. This differs from the plate-based suites."
+    },
+    "evaluation_method": {
+      "style": "linear-elastic FEA with linearized buckling eigenvalue analysis",
+      "primary_metrics": [
+        "mass",
+        "maximum von Mises stress",
+        "upper-flange displacement magnitude",
+        "first buckling eigenvalue"
+      ],
+      "buckling_evaluation_note": "Buckling is evaluated using linearized eigenvalue analysis on the pre-stress state from the static load case. The eigenvalue is the load multiplier at which buckling occurs."
+    },
+    "buckling_constraint_convention": {
+      "minimum_buckling_eigenvalue": "The first buckling eigenvalue under each applicable load case must exceed the stated minimum.",
+      "eigenvalue_definition": "Eigenvalue = critical_buckling_load / applied_load. A value of 3.0 means buckling at 3x applied load."
+    },
+    "standoff_anatomy_definitions": {
+      "lower_flange": "Base plate at z = 0 mounted to lower surface",
+      "upper_flange": "Top plate at z = standoff_height supporting the loaded component",
+      "standoff_body": "Column connecting the two flanges",
+      "transition_zones": "Fillet or taper regions where body meets each flange"
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "SO-T1-01",
+      "task_version": "0.2-draft",
+      "name": "Concentric solid-section compression standoff, baseline",
+      "family": "SO-A",
+      "category": "static_structural_with_buckling",
+      "design_intent": "Simplest standoff: solid cross-section, concentric axial compression. Establishes the standoff schema with buckling eigenvalue constraint.",
+      "loading_regime": "axial_compression",
+      "natural_language_task_description": "Design a solid-section compression standoff spanning a gap between two parallel mounting surfaces. The standoff consists of a lower flange at z = 0, an upper flange at z = 80 mm, and a solid body connecting them. Use a coordinate system with x and y in the flange plane and z along the standoff axis (vertical). The entire standoff must fit inside an axis-aligned bounding box with x in [-40, 40] mm, y in [-40, 40] mm, and z in [0, 80] mm. The lower flange at z = 0 is mounted to a rigid surface through four bolt holes of 6.6 mm diameter at (-20, -20, 0), (-20, 20, 0), (20, -20, 0), and (20, 20, 0) mm; all four hole cylindrical surfaces are fixed in translation. The upper flange at z = 80 mm carries a compressive load through a flat load pad centered at (0, 0, 80) mm with size 30 mm in x by 30 mm in y. An 8000 N compressive load is applied as uniform pressure over this pad in the -z direction. Both flange thicknesses are designable within bounds of 6 to 14 mm. The standoff body cross-section is designable but must remain solid (no hollow sections) with minimum cross-section dimension 12 mm. Minimum transition fillet radius between body and flanges is 4 mm. Use ASTM A36 steel: E = 200 GPa, nu = 0.29, yield = 250 MPa, density = 7850 kg/m^3. Minimize mass while keeping maximum von Mises stress below 83.3 MPa, maximum axial displacement at the load pad centroid below 0.15 mm, and first buckling eigenvalue at least 3.0. Both a linear static analysis and a linearized buckling eigenvalue analysis are required.",
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 83.3,
+        "stress_allowable_note": "SF = 3.0 on yield."
+      },
+      "manufacturing_model": {
+        "class": "single machined body",
+        "design_variable_policy": {
+          "body_cross_section": "designable_within_envelope",
+          "body_must_be_solid": true,
+          "flange_thickness": "designable_within_bounds",
+          "flange_outer_profile": "designable_within_envelope",
+          "transition_fillets": "designable",
+          "mounting_hole_diameters": "fixed",
+          "mounting_hole_centers": "fixed",
+          "hollow_sections": "forbidden"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": -40.0,
+          "x_max": 40.0,
+          "y_min": -40.0,
+          "y_max": 40.0,
+          "z_min": 0.0,
+          "z_max": 80.0
+        },
+        "standoff_height_mm": 80.0,
+        "lower_flange": {
+          "mounting_plane_z_mm": 0.0,
+          "flange_thickness_bounds_mm": {
+            "min": 6.0,
+            "max": 14.0
+          },
+          "mounting_holes": {
+            "count": 4,
+            "hole_diameter_mm": 6.6,
+            "hole_centers_mm": [
+              [
+                -20.0,
+                -20.0,
+                0.0
+              ],
+              [
+                -20.0,
+                20.0,
+                0.0
+              ],
+              [
+                20.0,
+                -20.0,
+                0.0
+              ],
+              [
+                20.0,
+                20.0,
+                0.0
+              ]
+            ]
+          }
+        },
+        "upper_flange": {
+          "mounting_plane_z_mm": 80.0,
+          "flange_thickness_bounds_mm": {
+            "min": 6.0,
+            "max": 14.0
+          },
+          "load_pad": {
+            "type": "flat_pad",
+            "center_mm": [
+              0.0,
+              0.0,
+              80.0
+            ],
+            "size_mm": {
+              "x": 30.0,
+              "y": 30.0
+            }
+          }
+        },
+        "body_constraints": {
+          "minimum_cross_section_dimension_mm": 12.0,
+          "minimum_transition_fillet_radius_mm": 4.0,
+          "body_must_be_solid": true
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Cylindrical surfaces of the four lower flange holes are fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "distributed_surface_pressure",
+        "load_definition": {
+          "total_force_vector_N": [
+            0.0,
+            0.0,
+            -8000.0
+          ],
+          "application_region": "upper flange load pad surface",
+          "eccentricity_mm": 0.0
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 83.3,
+          "displacement_constraint": {
+            "measurement_type": "upper_flange_load_pad_centroid",
+            "maximum_displacement_mm": 0.15
+          },
+          "buckling_constraint": {
+            "minimum_buckling_eigenvalue": 3.0,
+            "evaluation_method": "linearized_eigenvalue_analysis",
+            "evaluation_note": "First buckling eigenvalue must be at least 3.0."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "edge_distance_definition": "From hole edge to nearest free edge of flange.",
+          "minimum_internal_radius_mm": 4.0,
+          "single_connected_body_required": true
+        },
+        "interface_preservation_constraints": {
+          "lower_flange_hole_positions_fixed": true,
+          "lower_flange_hole_diameters_fixed": true,
+          "upper_flange_load_pad_location_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static + linearized buckling eigenvalue",
+        "analysis_sequence": [
+          "Run linear static analysis under compression.",
+          "Run linearized buckling analysis on pre-stress state.",
+          "Both must pass."
+        ],
+        "pass_fail_rules": [
+          "Design must remain inside bounding envelope.",
+          "Manufacturing and interface constraints must be satisfied.",
+          "Max von Mises stress must not exceed allowable.",
+          "Displacement at load pad centroid must not exceed limit.",
+          "First buckling eigenvalue must meet minimum."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "upper_flange_displacement_mm",
+          "first_buckling_eigenvalue",
+          "first_buckling_mode_description"
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "low",
+        "scientific_discrimination_value": "moderate"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    },
+    {
+      "task_id": "SO-T1-02",
+      "task_version": "0.2-draft",
+      "name": "Concentric hollow-section compression standoff",
+      "family": "SO-A",
+      "category": "static_structural_with_buckling",
+      "design_intent": "Hollow cross-section variant testing the three-way tradeoff: global buckling resistance vs mass vs local stability (D/t ratio).",
+      "loading_regime": "axial_compression",
+      "natural_language_task_description": "Design a hollow-section compression standoff spanning a gap between two parallel mounting surfaces. The standoff body may be hollow (tubular) rather than solid. Use a coordinate system with x and y in the flange plane and z along the standoff axis. Bounding box: x in [-40, 40] mm, y in [-40, 40] mm, z in [0, 85] mm. Standoff height is 85 mm. Lower flange at z = 0 with four bolt holes of 6.6 mm diameter at (-20, -20, 0), (-20, 20, 0), (20, -20, 0), (20, 20, 0) mm, fixed in translation. Upper flange at z = 85 mm with load pad centered at (0, 0, 85) mm, size 30x30 mm. 8000 N compressive load in -z applied as uniform pressure over the pad. Flange thicknesses designable 6-14 mm. Body outer dimension designable, minimum 16 mm. Wall thickness designable, minimum 3 mm. Maximum outer-dimension-to-wall-thickness ratio (D/t) is 25 to prevent local shell buckling. Hollow sections are permitted. Minimum transition fillet radius 4 mm. Use ASTM A36 steel: E = 200 GPa, nu = 0.29, yield = 250 MPa, density = 7850 kg/m^3. Minimize mass with max von Mises stress below 83.3 MPa, max displacement at pad centroid below 0.15 mm, first buckling eigenvalue at least 3.0, and D/t ratio not exceeding 25.",
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 83.3,
+        "stress_allowable_note": "SF = 3.0."
+      },
+      "manufacturing_model": {
+        "class": "single machined body",
+        "design_variable_policy": {
+          "body_cross_section": "designable_hollow_permitted",
+          "body_outer_dimension": "designable_within_envelope",
+          "body_wall_thickness": "designable_within_bounds",
+          "flange_thickness": "designable_within_bounds",
+          "flange_outer_profile": "designable_within_envelope",
+          "transition_fillets": "designable",
+          "mounting_hole_diameters": "fixed",
+          "mounting_hole_centers": "fixed"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": -40.0,
+          "x_max": 40.0,
+          "y_min": -40.0,
+          "y_max": 40.0,
+          "z_min": 0.0,
+          "z_max": 85.0
+        },
+        "standoff_height_mm": 85.0,
+        "lower_flange": {
+          "mounting_plane_z_mm": 0.0,
+          "flange_thickness_bounds_mm": {
+            "min": 6.0,
+            "max": 14.0
+          },
+          "mounting_holes": {
+            "count": 4,
+            "hole_diameter_mm": 6.6,
+            "hole_centers_mm": [
+              [
+                -20.0,
+                -20.0,
+                0.0
+              ],
+              [
+                -20.0,
+                20.0,
+                0.0
+              ],
+              [
+                20.0,
+                -20.0,
+                0.0
+              ],
+              [
+                20.0,
+                20.0,
+                0.0
+              ]
+            ]
+          }
+        },
+        "upper_flange": {
+          "mounting_plane_z_mm": 85.0,
+          "flange_thickness_bounds_mm": {
+            "min": 6.0,
+            "max": 14.0
+          },
+          "load_pad": {
+            "type": "flat_pad",
+            "center_mm": [
+              0.0,
+              0.0,
+              85.0
+            ],
+            "size_mm": {
+              "x": 30.0,
+              "y": 30.0
+            }
+          }
+        },
+        "body_constraints": {
+          "minimum_outer_dimension_mm": 16.0,
+          "minimum_wall_thickness_mm": 3.0,
+          "maximum_D_over_t_ratio": 25.0,
+          "D_over_t_note": "Prevents local shell buckling without separate local buckling analysis.",
+          "minimum_transition_fillet_radius_mm": 4.0,
+          "hollow_sections_permitted": true
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Four lower flange holes fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "distributed_surface_pressure",
+        "load_definition": {
+          "total_force_vector_N": [
+            0.0,
+            0.0,
+            -8000.0
+          ],
+          "application_region": "upper flange load pad surface",
+          "eccentricity_mm": 0.0
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 83.3,
+          "displacement_constraint": {
+            "measurement_type": "upper_flange_load_pad_centroid",
+            "maximum_displacement_mm": 0.15
+          },
+          "buckling_constraint": {
+            "minimum_buckling_eigenvalue": 3.0,
+            "evaluation_method": "linearized_eigenvalue_analysis"
+          },
+          "local_stability_constraint": {
+            "maximum_D_over_t_ratio": 25.0,
+            "definition": "Outer dimension / wall thickness must not exceed this limit."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "minimum_internal_radius_mm": 4.0,
+          "single_connected_body_required": true
+        },
+        "interface_preservation_constraints": {
+          "lower_flange_hole_positions_fixed": true,
+          "lower_flange_hole_diameters_fixed": true,
+          "upper_flange_load_pad_location_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static + linearized buckling eigenvalue",
+        "analysis_sequence": [
+          "Run linear static analysis.",
+          "Run linearized buckling analysis.",
+          "Check D/t ratio geometrically.",
+          "All three must pass."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "upper_flange_displacement_mm",
+          "first_buckling_eigenvalue",
+          "body_D_over_t_ratio",
+          "body_outer_dimension_mm",
+          "body_wall_thickness_mm"
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "high"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    },
+    {
+      "task_id": "SO-T1-03",
+      "task_version": "0.2-draft",
+      "name": "Eccentric compression standoff with combined loading",
+      "family": "SO-B",
+      "category": "static_structural_with_buckling",
+      "design_intent": "Load applied eccentric to body centroid, creating combined compression and bending. Tests P-delta sensitivity and asymmetric cross-section optimization.",
+      "loading_regime": "eccentric_compression",
+      "natural_language_task_description": "Design a compression standoff where the applied load is offset from the body centroid axis. Use coordinates x, y in the flange plane and z along the standoff axis. Bounding box: x in [-45, 45] mm, y in [-45, 45] mm, z in [0, 90] mm. Standoff height 90 mm. Lower flange at z = 0 with four bolt holes of 6.6 mm diameter at (-22, -22, 0), (-22, 22, 0), (22, -22, 0), (22, 22, 0) mm, fixed in translation. Upper flange at z = 90 mm with load pad centered at (15, 0, 90) mm \u2014 offset 15 mm in +x from the body centroid axis \u2014 size 24x24 mm. 7000 N compressive load in -z applied over the eccentric pad. Flange thicknesses designable 6-14 mm. Body may be hollow, minimum outer dimension 16 mm, minimum wall thickness 3 mm, max D/t ratio 25, min transition fillet 4 mm. Use ASTM A36 steel: E = 200 GPa, nu = 0.29, yield = 250 MPa, density = 7850 kg/m^3. The eccentricity creates combined compression and bending. Minimize mass with max von Mises stress below 83.3 MPa, max displacement at pad centroid below 0.25 mm, and first buckling eigenvalue at least 4.0 (higher than concentric tasks due to eccentricity sensitivity).",
+      "material": {
+        "name": "ASTM A36 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 250.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 83.3,
+        "stress_allowable_note": "SF = 3.0. Combined axial and bending stress must not exceed."
+      },
+      "manufacturing_model": {
+        "class": "single machined body",
+        "design_variable_policy": {
+          "body_cross_section": "designable_within_envelope",
+          "body_may_be_hollow": true,
+          "flange_thickness": "designable_within_bounds",
+          "flange_outer_profile": "designable_within_envelope",
+          "transition_fillets": "designable",
+          "mounting_hole_diameters": "fixed",
+          "mounting_hole_centers": "fixed"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": -45.0,
+          "x_max": 45.0,
+          "y_min": -45.0,
+          "y_max": 45.0,
+          "z_min": 0.0,
+          "z_max": 90.0
+        },
+        "standoff_height_mm": 90.0,
+        "lower_flange": {
+          "mounting_plane_z_mm": 0.0,
+          "flange_thickness_bounds_mm": {
+            "min": 6.0,
+            "max": 14.0
+          },
+          "mounting_holes": {
+            "count": 4,
+            "hole_diameter_mm": 6.6,
+            "hole_centers_mm": [
+              [
+                -22.0,
+                -22.0,
+                0.0
+              ],
+              [
+                -22.0,
+                22.0,
+                0.0
+              ],
+              [
+                22.0,
+                -22.0,
+                0.0
+              ],
+              [
+                22.0,
+                22.0,
+                0.0
+              ]
+            ]
+          }
+        },
+        "upper_flange": {
+          "mounting_plane_z_mm": 90.0,
+          "flange_thickness_bounds_mm": {
+            "min": 6.0,
+            "max": 14.0
+          },
+          "load_pad": {
+            "type": "flat_pad",
+            "center_mm": [
+              15.0,
+              0.0,
+              90.0
+            ],
+            "size_mm": {
+              "x": 24.0,
+              "y": 24.0
+            },
+            "eccentricity_note": "Load pad center offset 15 mm from body centroid axis in +x."
+          }
+        },
+        "body_constraints": {
+          "minimum_outer_dimension_mm": 16.0,
+          "minimum_wall_thickness_mm": 3.0,
+          "maximum_D_over_t_ratio": 25.0,
+          "minimum_transition_fillet_radius_mm": 4.0,
+          "hollow_sections_permitted": true
+        },
+        "eccentricity_definition": {
+          "load_eccentricity_mm": 15.0,
+          "eccentricity_direction": "+x"
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Four lower flange holes fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "distributed_surface_pressure",
+        "load_definition": {
+          "total_force_vector_N": [
+            0.0,
+            0.0,
+            -7000.0
+          ],
+          "application_region": "upper flange load pad (eccentric)",
+          "eccentricity_mm": 15.0,
+          "p_delta_note": "Eccentricity creates first-order bending. Buckling eigenvalue constraint provides implicit P-delta margin."
+        }
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 83.3,
+          "displacement_constraint": {
+            "measurement_type": "upper_flange_load_pad_centroid",
+            "maximum_displacement_mm": 0.25
+          },
+          "buckling_constraint": {
+            "minimum_buckling_eigenvalue": 4.0,
+            "evaluation_method": "linearized_eigenvalue_analysis",
+            "evaluation_note": "Higher eigenvalue required than concentric tasks due to eccentricity sensitivity."
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 8.0,
+          "minimum_internal_radius_mm": 4.0,
+          "single_connected_body_required": true
+        },
+        "interface_preservation_constraints": {
+          "lower_flange_hole_positions_fixed": true,
+          "lower_flange_hole_diameters_fixed": true,
+          "upper_flange_load_pad_location_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static + linearized buckling eigenvalue",
+        "analysis_sequence": [
+          "Run linear static analysis under eccentric compression.",
+          "Run linearized buckling on pre-stress state.",
+          "Both must pass."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa",
+          "upper_flange_displacement_mm",
+          "first_buckling_eigenvalue",
+          "maximum_lateral_deflection_at_midheight_mm"
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate",
+        "scientific_discrimination_value": "high"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    },
+    {
+      "task_id": "SO-T1-04",
+      "task_version": "0.2-draft",
+      "name": "Eccentric compression standoff with lateral load",
+      "family": "SO-B",
+      "category": "static_structural_with_buckling",
+      "design_intent": "Most mechanically complex standoff task: combined eccentric compression and lateral shear under two load cases. Tests compression, bending, shear, and stability simultaneously.",
+      "loading_regime": "eccentric_compression_with_lateral",
+      "natural_language_task_description": "Design a compression standoff under combined axial compression and lateral loading, with the compression applied eccentric to the body centroid. Use coordinates x, y in the flange plane and z along the standoff axis. Bounding box: x in [-45, 45] mm, y in [-45, 45] mm, z in [0, 95] mm. Standoff height 95 mm. Lower flange at z = 0 with four bolt holes of 8.5 mm diameter at (-24, -24, 0), (-24, 24, 0), (24, -24, 0), (24, 24, 0) mm, fixed in translation. Upper flange at z = 95 mm with load pad centered at (12, 0, 95) mm \u2014 offset 12 mm from centroid in +x \u2014 size 26x26 mm. Two load cases: LC1 is 9000 N in -z (eccentric compression only); LC2 is 9000 N in -z plus 1500 N in +x (eccentric compression plus lateral shear), both applied simultaneously at the upper flange. Flange thicknesses designable 6-14 mm. Body may be hollow, min outer dimension 16 mm, min wall thickness 3 mm, max D/t 25, min transition fillet 4 mm. Use ASTM A572 Grade 50 steel: E = 200 GPa, nu = 0.29, yield = 345 MPa, density = 7850 kg/m^3. Minimize mass with max von Mises stress below 115 MPa, max displacement at pad centroid below 0.30 mm, and first buckling eigenvalue at least 3.5, all satisfied under both load cases independently.",
+      "material": {
+        "name": "ASTM A572 Grade 50 steel",
+        "youngs_modulus_GPa": 200.0,
+        "poissons_ratio": 0.29,
+        "yield_strength_MPa": 345.0,
+        "density_kg_per_m3": 7850.0
+      },
+      "material_allowable_policy": {
+        "maximum_von_mises_stress_MPa": 115.0,
+        "stress_allowable_note": "SF = 3.0 on higher-strength steel. Combined loading makes this more demanding despite higher allowable."
+      },
+      "manufacturing_model": {
+        "class": "single machined body",
+        "design_variable_policy": {
+          "body_cross_section": "designable_hollow_permitted",
+          "body_outer_dimension": "designable_within_envelope",
+          "body_wall_thickness": "designable_within_bounds",
+          "flange_thickness": "designable_within_bounds",
+          "flange_outer_profile": "designable_within_envelope",
+          "transition_fillets": "designable",
+          "mounting_hole_diameters": "fixed",
+          "mounting_hole_centers": "fixed"
+        }
+      },
+      "geometry_definition": {
+        "bounding_envelope_mm": {
+          "x_min": -45.0,
+          "x_max": 45.0,
+          "y_min": -45.0,
+          "y_max": 45.0,
+          "z_min": 0.0,
+          "z_max": 95.0
+        },
+        "standoff_height_mm": 95.0,
+        "lower_flange": {
+          "mounting_plane_z_mm": 0.0,
+          "flange_thickness_bounds_mm": {
+            "min": 6.0,
+            "max": 14.0
+          },
+          "mounting_holes": {
+            "count": 4,
+            "hole_diameter_mm": 8.5,
+            "hole_centers_mm": [
+              [
+                -24.0,
+                -24.0,
+                0.0
+              ],
+              [
+                -24.0,
+                24.0,
+                0.0
+              ],
+              [
+                24.0,
+                -24.0,
+                0.0
+              ],
+              [
+                24.0,
+                24.0,
+                0.0
+              ]
+            ]
+          }
+        },
+        "upper_flange": {
+          "mounting_plane_z_mm": 95.0,
+          "flange_thickness_bounds_mm": {
+            "min": 6.0,
+            "max": 14.0
+          },
+          "load_pad": {
+            "type": "flat_pad",
+            "center_mm": [
+              12.0,
+              0.0,
+              95.0
+            ],
+            "size_mm": {
+              "x": 26.0,
+              "y": 26.0
+            },
+            "eccentricity_note": "Offset 12 mm from centroid in +x."
+          }
+        },
+        "body_constraints": {
+          "minimum_outer_dimension_mm": 16.0,
+          "minimum_wall_thickness_mm": 3.0,
+          "maximum_D_over_t_ratio": 25.0,
+          "minimum_transition_fillet_radius_mm": 4.0,
+          "hollow_sections_permitted": true
+        }
+      },
+      "loads_and_boundary_conditions": {
+        "support_modeling_type": "fixed_hole_surfaces",
+        "support_modeling_details": {
+          "description": "Four lower flange holes fixed in translation.",
+          "fixed_dofs": [
+            "Ux",
+            "Uy",
+            "Uz"
+          ]
+        },
+        "load_introduction_type": "distributed_surface_pressure",
+        "load_cases": [
+          {
+            "id": "LC1",
+            "description": "Eccentric axial compression",
+            "force_vector_N": [
+              0.0,
+              0.0,
+              -9000.0
+            ],
+            "application_region": "upper flange load pad (eccentric)",
+            "eccentricity_mm": 12.0
+          },
+          {
+            "id": "LC2",
+            "description": "Eccentric compression plus lateral shear",
+            "force_components": {
+              "axial_N": [
+                0.0,
+                0.0,
+                -9000.0
+              ],
+              "lateral_N": [
+                1500.0,
+                0.0,
+                0.0
+              ]
+            },
+            "application_regions": {
+              "axial": "upper flange load pad (eccentric)",
+              "lateral": "upper flange load pad edge in +x"
+            },
+            "combined_note": "Both applied simultaneously."
+          }
+        ]
+      },
+      "constraints": {
+        "performance_constraints": {
+          "maximum_von_mises_stress_MPa": 115.0,
+          "displacement_constraint": {
+            "measurement_type": "upper_flange_load_pad_centroid",
+            "maximum_displacement_mm": 0.3,
+            "measurement_note": "Under each load case independently."
+          },
+          "buckling_constraint": {
+            "minimum_buckling_eigenvalue": 3.5,
+            "evaluation_method": "linearized_eigenvalue_analysis",
+            "evaluation_note": "Checked under each load case. LC2 typically produces the lowest eigenvalue."
+          },
+          "local_stability_constraint": {
+            "maximum_D_over_t_ratio": 25.0
+          }
+        },
+        "manufacturing_constraints": {
+          "minimum_edge_distance_mm": 10.0,
+          "minimum_internal_radius_mm": 4.0,
+          "single_connected_body_required": true
+        },
+        "interface_preservation_constraints": {
+          "lower_flange_hole_positions_fixed": true,
+          "lower_flange_hole_diameters_fixed": true,
+          "upper_flange_load_pad_location_fixed": true
+        }
+      },
+      "objective": {
+        "primary_objective": "minimize_mass"
+      },
+      "evaluation_protocol": {
+        "analysis_type": "linear static + linearized buckling eigenvalue",
+        "constraints_policy": "Both load cases must independently satisfy all constraints.",
+        "analysis_sequence": [
+          "Run linear static under LC1.",
+          "Run buckling under LC1 pre-stress.",
+          "Run linear static under LC2.",
+          "Run buckling under LC2 pre-stress.",
+          "All four analyses must pass."
+        ],
+        "reporting_requirements": [
+          "mass_kg",
+          "max_von_mises_stress_MPa_LC1",
+          "max_von_mises_stress_MPa_LC2",
+          "upper_flange_displacement_mm_LC1",
+          "upper_flange_displacement_mm_LC2",
+          "first_buckling_eigenvalue_LC1",
+          "first_buckling_eigenvalue_LC2",
+          "body_D_over_t_ratio"
+        ]
+      },
+      "difficulty_characterization": {
+        "feasibility_risk": "moderate_to_high",
+        "scientific_discrimination_value": "high"
+      },
+      "reference_solution": {
+        "status": "placeholder_pending"
+      },
+      "feasibility_check": {
+        "status": "pending"
+      }
+    }
+  ]
+}
